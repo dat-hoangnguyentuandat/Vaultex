@@ -1,0 +1,110 @@
+@page "/account/login"
+@model App.API.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="auth-logo">
+    <img src="/favicon.png" alt="logo" />
+    <span class="auth-logo-text">Vaultex</span>
+</div>
+
+<div class="auth-card">
+    <h1 class="auth-card-title">ĐĂNG NHẬP</h1>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="auth-alert-error">
+            <span class="auth-alert-icon">⚠</span>
+            <span class="auth-alert-text">@Model.ErrorMessage</span>
+        </div>
+    }
+
+    <form method="post" asp-route-returnUrl="@Model.ReturnUrl" autocomplete="off">
+        <div asp-validation-summary="None" class="auth-alert-error" style="display:@(ViewData.ModelState.IsValid ? "none" : "flex")">
+            <span class="auth-alert-icon">⚠</span>
+            <span class="auth-alert-text">
+                @Html.ValidationSummary(excludePropertyErrors: true, message: "", htmlAttributes: new { @class = "" })
+            </span>
+        </div>
+
+        @* ── Email ── *@
+        <div class="auth-field">
+            <label asp-for="Input.Email">Email <span class="required-star">*</span></label>
+            <input asp-for="Input.Email"
+                   class="auth-input @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "input-error" : "")"
+                   placeholder="Nhập email"
+                   autocomplete="email"
+                   type="email" />
+            <span asp-validation-for="Input.Email" class="auth-error-msg"></span>
+        </div>
+
+        @* ── Mật khẩu ── *@
+        <div class="auth-field">
+            <label asp-for="Input.Password">Mật khẩu <span class="required-star">*</span></label>
+            <div class="auth-input-password-wrapper">
+                <input asp-for="Input.Password"
+                       id="password-field"
+                       class="auth-input @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "input-error" : "")"
+                       placeholder="Nhập mật khẩu"
+                       autocomplete="current-password"
+                       type="password" />
+                <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1">
+                    <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                </button>
+            </div>
+            <span asp-validation-for="Input.Password" class="auth-error-msg"></span>
+        </div>
+
+        @* ── Remember me + Quên mật khẩu ── *@
+        <div class="auth-remember-row">
+            <label class="auth-checkbox-label">
+                <input asp-for="Input.RememberMe" class="auth-checkbox" type="checkbox" />
+                <span>Ghi nhớ đăng nhập</span>
+            </label>
+            <a href="/account/forgot-password" class="auth-forgot-link">Quên mật khẩu?</a>
+        </div>
+
+        @* ── Submit ── *@
+        <div style="margin-top: 24px;">
+            <button type="submit" class="btn-auth-primary" id="submit-btn">
+                Đăng nhập
+            </button>
+        </div>
+    </form>
+
+    <div class="auth-login-footer">
+        <div class="auth-footer-link">
+            Chưa có tài khoản? <a href="/account/register">Đăng ký</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword() {
+        const field = document.getElementById('password-field');
+        const icon  = document.getElementById('eye-icon');
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.innerHTML = `
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>`;
+        } else {
+            field.type = 'password';
+            icon.innerHTML = `
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>`;
+        }
+    }
+    document.querySelector('form').addEventListener('submit', function() {
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-spinner"></span>Đang đăng nhập...';
+    });
+</script>

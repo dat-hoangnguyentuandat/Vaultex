@@ -1,0 +1,189 @@
+@page "/admin/policies"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>Policy Management</PageTitle>
+
+<h3>Policies</h3>
+
+<div class="d-flex justify-content-between mb-3">
+    <span class="text-muted">@policies.Count policy(ies)</span>
+    <button class="btn btn-primary" @onclick="OpenCreate">+ New Policy</button>
+</div>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Resource</th>
+                <th>Action</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in policies)
+            {
+                <tr>
+                    <td>@p.Name</td>
+                    <td><code>@p.Resource</code></td>
+                    <td><code>@p.Action</code></td>
+                    <td>
+                        <span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">
+                            @(p.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-1"
+                                @onclick="() => OpenEdit(p)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => DeletePolicy(p.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showForm)
+{
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editId.HasValue ? "Edit Policy" : "Create Policy")</h5>
+                    <button class="btn-close" @onclick="CloseForm"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-6">
+                            <label>Name</label>
+                            <input class="form-control" @bind="form.Name" />
+                        </div>
+                        <div class="col-md-3">
+                            <label>Resource</label>
+                            <input class="form-control" @bind="form.Resource" placeholder="product" />
+                        </div>
+                        <div class="col-md-3">
+                            <label>Action</label>
+                            <input class="form-control" @bind="form.Action" placeholder="create" />
+                        </div>
+                    </div>
+
+                    <label>Conditions (JSON)</label>
+                    <textarea class="form-control font-monospace" rows="6" @bind="form.ConditionsJson"
+                              placeholder='[{"type":"owner_only"},{"type":"time_range","value":"09:00-17:00"}]'></textarea>
+                    <small class="text-muted">
+                        Types: <code>tenant_match</code>, <code>owner_only</code>,
+                        <code>time_range</code> (value: "HH:mm-HH:mm"),
+                        <code>ip_whitelist</code> (value: "1.2.3.4,10.0.0.0/8")
+                    </small>
+
+                    @if (editId.HasValue)
+                    {
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" @bind="form.IsActive" />
+                            <label class="form-check-label">Active</label>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(formError))
+                    {
+                        <div class="alert alert-danger mt-2">@formError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseForm">Cancel</button>
+                    <button class="btn btn-primary" @onclick="SavePolicy">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
+
+    private List<PolicyDto> policies = [];
+    private bool loading = true;
+    private bool showForm;
+    private Guid? editId;
+    private PolicyForm form = new();
+    private string formError = "";
+
+    protected override async Task OnInitializedAsync() => await LoadPolicies();
+
+    private async Task LoadPolicies()
+    {
+        loading = true;
+        var result = await Api.CallApiAsync<List<PolicyDto>>("api/admin/policies");
+        policies = result ?? [];
+        loading = false;
+    }
+
+    private void OpenCreate()
+    {
+        editId = null;
+        form = new();
+        formError = "";
+        showForm = true;
+    }
+
+    private void OpenEdit(PolicyDto p)
+    {
+        editId = p.Id;
+        form = new PolicyForm { Name = p.Name, Resource = p.Resource, Action = p.Action, IsActive = p.IsActive };
+        formError = "";
+        showForm = true;
+    }
+
+    private void CloseForm() { showForm = false; formError = ""; }
+
+    private async Task SavePolicy()
+    {
+        formError = "";
+        var body = new
+        {
+            form.Name, form.Resource, form.Action,
+            ConditionsJson = string.IsNullOrWhiteSpace(form.ConditionsJson) ? "[]" : form.ConditionsJson,
+            form.IsActive
+        };
+
+        var resp = editId.HasValue
+            ? await Api.PutAsync($"api/admin/policies/{editId}", body)
+            : await Api.PostAsync("api/admin/policies", body);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            CloseForm();
+            await LoadPolicies();
+        }
+        else
+        {
+            formError = await resp.Content.ReadAsStringAsync();
+        }
+    }
+
+    private async Task DeletePolicy(Guid id)
+    {
+        await Api.DeleteAsync($"api/admin/policies/{id}");
+        await LoadPolicies();
+    }
+
+    private record PolicyDto(Guid Id, string Name, string Resource, string Action, bool IsActive);
+    private class PolicyForm
+    {
+        public string Name { get; set; } = "";
+        public string Resource { get; set; } = "";
+        public string Action { get; set; } = "";
+        public string ConditionsJson { get; set; } = "[]";
+        public bool IsActive { get; set; } = true;
+    }
+}

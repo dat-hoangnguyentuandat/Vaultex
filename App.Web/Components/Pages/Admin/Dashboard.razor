@@ -1,0 +1,77 @@
+@page "/admin"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+<h3>Dashboard</h3>
+<p class="text-muted">Tenant: <strong>@tenantName</strong></p>
+
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Users</h5>
+                <p class="card-text display-6">@userCount</p>
+                <a href="/admin/users" class="text-white">Manage →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Roles</h5>
+                <p class="card-text display-6">@roleCount</p>
+                <a href="/admin/roles" class="text-white">Manage →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Policies</h5>
+                <p class="card-text display-6">@policyCount</p>
+                <a href="/admin/policies" class="text-white">Manage →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Audit Events</h5>
+                <p class="card-text display-6">@auditCount</p>
+                <a href="/admin/audit" class="text-white">View →</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string tenantName = "Loading...";
+    private int userCount, roleCount, policyCount, auditCount;
+
+    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var users = await Api.CallApiAsync<PagedResult<UserSummary>>("api/admin/users?pageSize=1");
+            userCount = users?.Total ?? 0;
+
+            var roles = await Api.CallApiAsync<List<object>>("api/admin/roles");
+            roleCount = roles?.Count ?? 0;
+
+            var policies = await Api.CallApiAsync<List<object>>("api/admin/policies");
+            policyCount = policies?.Count ?? 0;
+
+            var audit = await Api.CallApiAsync<PagedResult<object>>("api/audit?pageSize=1");
+            auditCount = audit?.Total ?? 0;
+        }
+        catch { }
+    }
+
+    private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
+    private record UserSummary(Guid Id, string Email, string? FullName, bool IsActive);
+}

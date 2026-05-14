@@ -1,0 +1,143 @@
+@page "/account/register"
+@model App.API.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="auth-logo">
+    <img src="/favicon.png" alt="logo" />
+    <span class="auth-logo-text">Vaultex</span>
+</div>
+
+@if (Model.Step == 1)
+{
+    <div class="auth-card">
+        <h1 class="auth-card-title">ĐĂNG KÝ</h1>
+
+        <form method="post" asp-page-handler="Info" autocomplete="off" novalidate onsubmit="console.log('FORM STEP 1 SUBMITTING!'); return true;">
+            <div class="auth-row-2col">
+                <div class="auth-field">
+                    <label>Email <span class="required-star">*</span></label>
+                    <input asp-for="Info.Email" class="auth-input" placeholder="Nhập email" />
+                    <span asp-validation-for="Info.Email" class="auth-validation"></span>
+                </div>
+                <div class="auth-field">
+                    <label>Số điện thoại <span class="required-star">*</span></label>
+                    <input asp-for="Info.PhoneNumber" class="auth-input" placeholder="Nhập số điện thoại" />
+                    <span asp-validation-for="Info.PhoneNumber" class="auth-validation"></span>
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label>Họ và Tên</label>
+                <input asp-for="Info.Fullname" class="auth-input" placeholder="Nhập họ và tên" />
+            </div>
+
+            <div class="auth-field">
+                <label>Ngày sinh</label>
+                <input asp-for="Info.DateOfBirth" type="date" class="auth-input" />
+            </div>
+
+            <div class="auth-field">
+                <label>Công ty</label>
+                <input asp-for="Info.Company" class="auth-input" placeholder="Nhập tên công ty" />
+            </div>
+
+            <div class="auth-field">
+                <label>Chức vụ</label>
+                <input asp-for="Info.Position" class="auth-input" placeholder="Nhập chức vụ" />
+            </div>
+
+            <div style="margin-top: 24px;">
+                <button type="submit" class="btn-auth-primary">Tiếp tục</button>
+            </div>
+        </form>
+
+        <div class="auth-footer-link">
+            Bạn đã có tài khoản? <a href="/account/login">Đăng nhập</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="auth-card">
+        <h1 class="auth-card-title">TẠO MẬT KHẨU</h1>
+
+        <form method="post" asp-page-handler="Register" autocomplete="off" novalidate>
+            @if (Model.ServerErrors.Count > 0)
+            {
+                <div class="auth-server-errors">
+                    <ul>
+                        @foreach (var err in Model.ServerErrors)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                </div>
+            }
+            <div class="auth-field">
+                <label>Mật khẩu <span class="required-star">*</span></label>
+                <div class="auth-input-password-wrapper">
+                    <input asp-for="Pwd.Password" type="password" id="pwd1"
+                           class="auth-input" placeholder="Nhập mật khẩu" />
+                    <button type="button" class="toggle-password"
+                            onclick="togglePwd('pwd1', this)" tabindex="-1">
+                        @Html.Raw(RegisterModel.EyeClosedSvg)
+                    </button>
+                </div>
+                <span asp-validation-for="Pwd.Password" class="auth-validation"></span>
+                <div class="auth-hint-msg">
+                    Sử dụng tối thiểu 8 ký tự, bao gồm chữ cái, chữ số và ký tự đặc biệt
+                </div>
+            </div>
+
+            <div class="auth-field">
+                <label>Nhập lại mật khẩu <span class="required-star">*</span></label>
+                <div class="auth-input-password-wrapper">
+                    <input asp-for="Pwd.ConfirmPassword" type="password" id="pwd2"
+                           class="auth-input" placeholder="Nhập lại mật khẩu" />
+                    <button type="button" class="toggle-password"
+                            onclick="togglePwd('pwd2', this)" tabindex="-1">
+                        @Html.Raw(RegisterModel.EyeClosedSvg)
+                    </button>
+                </div>
+                <span asp-validation-for="Pwd.ConfirmPassword" class="auth-validation"></span>
+            </div>
+
+            <div class="auth-btn-row">
+                <a href="/account/register" class="btn-auth-outline">Quay lại</a>
+                <button type="submit" class="btn-auth-primary">Đăng ký</button>
+            </div>
+        </form>
+    </div>
+}
+
+@if (Model.ShowSuccess)
+{
+    <div class="auth-modal-overlay">
+        <div class="auth-modal">
+            <div class="auth-modal-header">
+                <div class="auth-modal-title">
+                    <span class="success-icon">✓</span>
+                    Tạo tài khoản thành công
+                </div>
+            </div>
+            <div class="auth-modal-footer">
+                <a href="/account/login" class="btn-modal-ok">OK</a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function togglePwd(inputId, btn) {
+            var input = document.getElementById(inputId);
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            btn.innerHTML = isHidden
+                ? '@Html.Raw(RegisterModel.EyeOpenSvgJs)'
+                : '@Html.Raw(RegisterModel.EyeClosedSvgJs)';
+        }
+    </script>
+}

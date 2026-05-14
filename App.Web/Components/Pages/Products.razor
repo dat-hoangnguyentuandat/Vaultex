@@ -1,0 +1,105 @@
+@page "/products"
+@attribute [Authorize]
+
+<PageTitle>Quản lý sản phẩm</PageTitle>
+
+<div class="auth-page" style="background: #FFFFFF; background-image: none;">
+    <div class="auth-card" style="max-width: 900px;">
+        <h1 class="auth-card-title">Quản lý sản phẩm</h1>
+
+        @if (_success is not null)
+        {
+            <div class="auth-alert-error" style="background: #f0fdf4; border-color: #86efac; color: #166534;">
+                <span class="auth-alert-icon">✓</span>
+                <span class="auth-alert-text">@_success</span>
+            </div>
+        }
+        @if (_error is not null)
+        {
+            <div class="auth-alert-error">
+                <span class="auth-alert-icon">⚠</span>
+                <span class="auth-alert-text">@_error</span>
+            </div>
+        }
+
+        @* Form thêm sản phẩm *@
+        <form method="post" @formname="create-product" style="margin-bottom: 32px;">
+            <AntiforgeryToken />
+            <h5 style="margin-bottom: 16px; color: #3b4fc8; font-weight: 600;">Thêm sản phẩm mới</h5>
+            <div class="auth-row-2col">
+                <div class="auth-field">
+                    <label>Tên sản phẩm <span class="required-star">*</span></label>
+                    <input type="text" name="NewProduct.Name" class="auth-input" placeholder="VD: ABC" required />
+                </div>
+                <div class="auth-field">
+                    <label>Giá <span class="required-star">*</span></label>
+                    <input type="number" name="NewProduct.Price" class="auth-input" placeholder="0.00" step="0.01" required />
+                </div>
+            </div>
+            <div class="auth-field">
+                <label>Mô tả</label>
+                <textarea name="NewProduct.Description" class="auth-input" rows="3" style="resize: vertical;"></textarea>
+            </div>
+            <div class="auth-field">
+                <label>Số lượng <span class="required-star">*</span></label>
+                <input type="number" name="NewProduct.Stock" class="auth-input" placeholder="0" required />
+            </div>
+            <button type="submit" class="btn-auth-primary">Thêm sản phẩm</button>
+        </form>
+
+        <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+        @* Form xóa dùng chung*@
+        <form method="post" @formname="delete-product" id="delete-product-form" style="display: none;">
+            <AntiforgeryToken />
+            <input type="hidden" name="DeleteTarget.Id" id="delete-product-id" />
+        </form>
+
+        @* Danh sách sản phẩm *@
+        <h5 style="margin-bottom: 16px; color: #3b4fc8; font-weight: 600;">Danh sách sản phẩm</h5>
+
+        @if (_products is null || _products.Count == 0)
+        {
+            <p style="color: #6b7280; text-align: center; padding: 20px;">Chưa có sản phẩm nào.</p>
+        }
+        else
+        {
+            <div style="overflow-x: auto;">
+                <table class="table table-striped" style="font-size: 0.9rem; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>Tên</th>
+                            <th>Mô tả</th>
+                            <th>Giá</th>
+                            <th>Số lượng</th>
+                            <th>Tạo bởi</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in _products)
+                        {
+                            <tr>
+                                <td><strong>@p.Name</strong></td>
+                                <td>@p.Description</td>
+                                <td>$@p.Price.ToString("F2")</td>
+                                <td>
+                                    <span class="badge @(p.Stock > 0 ? "bg-success" : "bg-danger")">@p.Stock</span>
+                                </td>
+                                <td>@p.CreatedByEmail</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            onclick="submitDeleteForm('@p.Id')">Xóa</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div style="margin-top: 20px;">
+            <a href="/" class="btn btn-secondary">Quay lại</a>
+        </div>
+    </div>
+</div>

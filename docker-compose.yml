@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vaultex
+      POSTGRES_USER: vaultex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vaultex_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaultex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app-api:
+    build:
+      context: .
+      dockerfile: App.API/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=vaultex;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      ConnectionStrings__Redis: "redis:6379"
+      OpenIddict__TokenLifetimes__AccessTokenSeconds: "3600"
+      OpenIddict__TokenLifetimes__RefreshTokenDays: "30"
+      OpenIddict__TokenLifetimes__AuthorizationCodeMinutes: "5"
+    ports:
+      - "7108:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  app-web:
+    build:
+      context: .
+      dockerfile: App.Web/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      # Browser-facing authority (external port)
+      Oidc__Authority: "http://localhost:7108"
+      Oidc__ClientId: "app-web"
+      Oidc__ClientSecret: "${OIDC_CLIENT_SECRET:-app-web-secret}"
+      # Internal backchannel discovery (container-to-container)
+      Oidc__MetadataAddress: "http://app-api:8080/.well-known/openid-configuration"
+      ApiClient__BaseUrl: "http://app-api:8080"
+    ports:
+      - "7066:8080"
+    depends_on:
+      - app-api
+
+volumes:
+  postgres_data:

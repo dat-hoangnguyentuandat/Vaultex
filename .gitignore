@@ -1,0 +1,14 @@
+.vs/
+bin/
+obj/
+.claude/
+claude_code_project
+
+*.user
+*.suo
+
+node_modules/
+
+wwwroot/lib/
+
+appsettings.Development.json
