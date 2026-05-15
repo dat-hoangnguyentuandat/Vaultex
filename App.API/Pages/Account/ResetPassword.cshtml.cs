@@ -8,7 +8,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace App.API.Pages.Account;
 
-[EnableRateLimiting("LoginPage")]
 public class ResetPasswordModel : PageModel
 {
     private readonly UserManager<User> _userManager;
