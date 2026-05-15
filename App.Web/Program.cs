@@ -42,6 +42,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<App.Web.Services.ApiClient>();
+builder.Services.AddHealthChecks();
 
 builder.Services.AddHttpClient("api", client =>
     client.BaseAddress = new Uri(
@@ -61,9 +62,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
-app.MapGet("api/auth/login", () =>
+app.MapGet("api/auth/login", (string? returnUrl) =>
     Results.Challenge(
-        properties: new AuthenticationProperties { RedirectUri = "/" },
+        properties: new AuthenticationProperties
+        {
+            RedirectUri = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/"
+        },
         authenticationSchemes: [OpenIdConnectDefaults.AuthenticationScheme]
     ));
 
@@ -78,5 +82,7 @@ app.MapGet("api/auth/logout", () =>
 
 app.MapRazorComponents<App.Web.Components.App>()
     .AddInteractiveServerRenderMode();
+
+app.MapHealthChecks("/health");
 
 app.Run();

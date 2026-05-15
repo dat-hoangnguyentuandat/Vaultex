@@ -82,6 +82,12 @@
         <div class="auth-footer-link">
             Chưa có tài khoản? <a href="/account/register">Đăng ký</a>
         </div>
+        @if (Model.EmailNotConfirmed)
+        {
+            <div class="auth-footer-link" style="margin-top:8px;">
+                <a href="/account/resend-confirmation">Gửi lại email xác nhận</a>
+            </div>
+        }
     </div>
 </div>
 

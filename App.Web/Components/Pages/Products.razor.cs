@@ -14,9 +14,16 @@ public partial class Products
     [SupplyParameterFromForm(FormName = "delete-product")]
     private DeleteProductInput? DeleteTarget { get; set; }
 
+    [SupplyParameterFromQuery(Name = "page")]
+    private int PageParam { get; set; } = 1;
+
     private List<ProductItem>? _products;
     private string? _error;
     private string? _success;
+    private int _page => Math.Max(1, PageParam);
+    private const int PageSize = 20;
+    private int _total;
+    private int TotalPages => (int)Math.Ceiling((double)_total / PageSize);
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,12 +52,15 @@ public partial class Products
                 _error = $"Lỗi xóa sản phẩm: {(int)response.StatusCode}";
         }
 
-        var getResponse = await ApiClient.CallApiAsync(HttpMethod.Get, "/api/Product");
+        var getResponse = await ApiClient.CallApiAsync(HttpMethod.Get,
+            $"/api/Product?page={_page}&pageSize={PageSize}");
         if (getResponse.IsSuccessStatusCode)
         {
             var json = await getResponse.Content.ReadAsStringAsync();
-            _products = JsonSerializer.Deserialize<List<ProductItem>>(json,
+            var paged = JsonSerializer.Deserialize<PagedResult>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            _products = paged?.Items;
+            _total = paged?.Total ?? 0;
         }
         else
         {
@@ -61,6 +71,8 @@ public partial class Products
     private record ProductItem(
         Guid Id, string Name, string? Description,
         decimal Price, int Stock, string CreatedByEmail, DateTime CreatedAt);
+
+    private record PagedResult(int Total, int Page, int PageSize, List<ProductItem> Items);
 
     private class CreateProductInput
     {

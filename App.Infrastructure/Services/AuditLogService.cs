@@ -1,6 +1,7 @@
 using App.Domain.Entities;
 using App.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace App.Infrastructure.Services
 {
@@ -8,11 +9,13 @@ namespace App.Infrastructure.Services
     {
         private readonly AppDbContext _db;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<AuditLogService> _logger;
 
-        public AuditLogService(AppDbContext db, IHttpContextAccessor httpContextAccessor)
+        public AuditLogService(AppDbContext db, IHttpContextAccessor httpContextAccessor, ILogger<AuditLogService> logger)
         {
             _db = db;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public async Task LogAsync(
@@ -41,7 +44,16 @@ namespace App.Infrastructure.Services
             };
 
             _db.AuditLogs.Add(entry);
-            await _db.SaveChangesAsync();
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist audit log entry. EventType={EventType} TenantId={TenantId} UserId={UserId}",
+                    eventType, tenantId, userId);
+            }
         }
     }
 }

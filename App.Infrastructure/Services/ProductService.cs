@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using App.Application.DTOs;
+﻿using App.Application.DTOs;
 using App.Application.Interfaces;
 using App.Domain.Entities;
+using App.Domain.Exceptions;
 using App.Infrastructure.Data;
 using App.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
@@ -18,12 +14,18 @@ namespace App.Infrastructure.Services
         private readonly AppDbContext _context;
         private readonly UserManager<User> _userManager;
         private readonly ITenantContext _tenantContext;
+        private readonly AuditLogService _auditLog;
 
-        public ProductService(AppDbContext context, UserManager<User> userManager, ITenantContext tenantContext)
+        public ProductService(
+            AppDbContext context,
+            UserManager<User> userManager,
+            ITenantContext tenantContext,
+            AuditLogService auditLog)
         {
             _context = context;
             _userManager = userManager;
             _tenantContext = tenantContext;
+            _auditLog = auditLog;
         }
 
         public async Task<ProductDto> CreateProductAsync(CreateProductDto dto, Guid userId)
@@ -35,7 +37,7 @@ namespace App.Infrastructure.Services
             {
                 TenantId = _tenantContext.TenantId.Value,
                 Name = dto.Name,
-                Description = dto.Description,
+                Description = dto.Description ?? string.Empty,
                 Price = dto.Price,
                 Stock = dto.Stock,
                 CreatedByUserId = userId
@@ -43,6 +45,10 @@ namespace App.Infrastructure.Services
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
+
+            await _auditLog.LogAsync(AuditEventTypes.ProductCreated, _tenantContext.TenantId, userId,
+                resourceType: "Product", resourceId: product.Id.ToString(),
+                newValue: product.Name);
 
             var user = await _userManager.FindByIdAsync(userId.ToString());
             return MapToDto(product, user?.Email ?? "Unknown");
@@ -57,35 +63,57 @@ namespace App.Infrastructure.Services
             return MapToDto(product, user?.Email ?? "Unknown");
         }
 
-        public async Task<List<ProductDto>> GetAllProductsAsync()
+        public async Task<PagedResult<ProductDto>> GetAllProductsAsync(int page = 1, int pageSize = 20)
         {
-            var products = await _context.Products.ToListAsync();
-            var result = new List<ProductDto>();
+            var query = _context.Products.AsNoTracking().OrderByDescending(p => p.CreatedAt);
+            var total = await query.CountAsync();
 
-            foreach (var product in products)
+            var products = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var userIds = products.Select(p => p.CreatedByUserId.ToString()).Distinct().ToList();
+            var users = new Dictionary<string, string>();
+            foreach (var uid in userIds)
             {
-                var user = await _userManager.FindByIdAsync(product.CreatedByUserId.ToString());
-                result.Add(MapToDto(product, user?.Email ?? "Unknown"));
+                var user = await _userManager.FindByIdAsync(uid);
+                if (user?.Email is not null)
+                    users[uid] = user.Email;
             }
-            return result;
+
+            return new PagedResult<ProductDto>
+            {
+                Total = total,
+                Page = page,
+                PageSize = pageSize,
+                Items = products
+                    .Select(p => MapToDto(p, users.GetValueOrDefault(p.CreatedByUserId.ToString(), "Unknown")))
+                    .ToList()
+            };
         }
 
         public async Task<ProductDto> UpdateProductAsync(Guid id, CreateProductDto dto, Guid userId)
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
             if (product == null)
-                throw new Exception("Product không tìm thấy");
+                throw new NotFoundException("Product not found.");
 
             if (product.CreatedByUserId != userId)
-                throw new Exception("Bạn không có quyền sửa product này");
+                throw new ForbiddenException("You do not have permission to update this product.");
 
+            var oldName = product.Name;
             product.Name = dto.Name;
-            product.Description = dto.Description;
+            product.Description = dto.Description ?? string.Empty;
             product.Price = dto.Price;
             product.Stock = dto.Stock;
             product.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            await _auditLog.LogAsync(AuditEventTypes.ProductUpdated, _tenantContext.TenantId, userId,
+                resourceType: "Product", resourceId: product.Id.ToString(),
+                oldValue: oldName, newValue: product.Name);
 
             var user = await _userManager.FindByIdAsync(userId.ToString());
             return MapToDto(product, user?.Email ?? "Unknown");
@@ -95,13 +123,17 @@ namespace App.Infrastructure.Services
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
             if (product == null)
-                throw new Exception("Product không tìm thấy");
+                throw new NotFoundException("Product not found.");
 
             if (product.CreatedByUserId != userId)
-                throw new Exception("Bạn không có quyền xóa product này");
+                throw new ForbiddenException("You do not have permission to delete this product.");
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();
+
+            await _auditLog.LogAsync(AuditEventTypes.ProductDeleted, _tenantContext.TenantId, userId,
+                resourceType: "Product", resourceId: id.ToString(),
+                oldValue: product.Name);
         }
 
         private ProductDto MapToDto(Product product, string createdByEmail)

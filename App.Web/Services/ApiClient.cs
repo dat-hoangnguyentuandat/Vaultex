@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Configuration;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -10,15 +11,22 @@ public class ApiClient
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly string _clientId;
+    private readonly string _clientSecret;
 
     private string? _accessToken;
     private string? _refreshToken;
     private bool _tokensLoaded;
 
-    public ApiClient(IHttpContextAccessor httpContextAccessor, IHttpClientFactory httpClientFactory)
+    public ApiClient(
+        IHttpContextAccessor httpContextAccessor,
+        IHttpClientFactory httpClientFactory,
+        IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _httpClientFactory = httpClientFactory;
+        _clientId = configuration["Oidc:ClientId"] ?? "app-web";
+        _clientSecret = configuration["Oidc:ClientSecret"] ?? "app-web-secret";
     }
 
     private async Task EnsureTokensLoadedAsync()
@@ -89,8 +97,8 @@ public class ApiClient
             {
                 ["grant_type"] = "refresh_token",
                 ["refresh_token"] = _refreshToken,
-                ["client_id"] = "app-web",
-                ["client_secret"] = "app-web-secret",
+                ["client_id"] = _clientId,
+                ["client_secret"] = _clientSecret,
             }));
 
         if (!response.IsSuccessStatusCode) return false;

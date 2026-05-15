@@ -29,6 +29,15 @@ namespace App.Domain.Entities
         public const string UserDeleted     = "USER_DELETED";
         public const string RoleChanged     = "ROLE_CHANGED";
         public const string PolicyChanged   = "POLICY_CHANGED";
-        public const string TenantCreated   = "TENANT_CREATED";
+        public const string TenantCreated       = "TENANT_CREATED";
+        public const string TenantUpdated       = "TENANT_UPDATED";
+        public const string TenantStatusChanged = "TENANT_STATUS_CHANGED";
+        public const string UserStatusChanged   = "USER_STATUS_CHANGED";
+        public const string EmailConfirmed  = "EMAIL_CONFIRMED";
+        public const string PasswordChanged = "PASSWORD_CHANGED";
+        public const string ProfileUpdated  = "PROFILE_UPDATED";
+        public const string ProductCreated  = "PRODUCT_CREATED";
+        public const string ProductUpdated  = "PRODUCT_UPDATED";
+        public const string ProductDeleted  = "PRODUCT_DELETED";
     }
 }

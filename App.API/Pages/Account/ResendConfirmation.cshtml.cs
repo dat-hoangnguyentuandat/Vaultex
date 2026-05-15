@@ -7,17 +7,17 @@ using System.ComponentModel.DataAnnotations;
 namespace App.API.Pages.Account;
 
 [EnableRateLimiting("LoginPage")]
-public class ForgotPasswordModel : PageModel
+public class ResendConfirmationModel : PageModel
 {
     private readonly IAuthService _authService;
 
-    public ForgotPasswordModel(IAuthService authService)
+    public ResendConfirmationModel(IAuthService authService)
     {
         _authService = authService;
     }
 
     [BindProperty]
-    public ForgotPasswordInput Input { get; set; } = new();
+    public ResendConfirmationInput Input { get; set; } = new();
 
     public bool EmailSent { get; private set; }
 
@@ -28,19 +28,14 @@ public class ForgotPasswordModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        // Always call ForgotPasswordAsync — it silently ignores unknown emails
-        // to prevent user enumeration
-        await _authService.ForgotPasswordAsync(new App.Application.DTOs.ForgotPasswordDto
-        {
-            Email = Input.Email
-        });
+        await _authService.SendEmailConfirmationAsync(Input.Email);
 
         EmailSent = true;
         return Page();
     }
 }
 
-public class ForgotPasswordInput
+public class ResendConfirmationInput
 {
     [Required(ErrorMessage = "Vui lòng nhập email")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ")]

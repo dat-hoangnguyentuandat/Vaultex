@@ -1,7 +1,7 @@
-@page "/account/forgot-password"
-@model App.API.Pages.Account.ForgotPasswordModel
+@page "/account/resend-confirmation"
+@model App.API.Pages.Account.ResendConfirmationModel
 @{
-    ViewData["Title"] = "Quên mật khẩu";
+    ViewData["Title"] = "Gửi lại xác nhận email";
 }
 
 <div class="auth-logo">
@@ -10,14 +10,14 @@
 </div>
 
 <div class="auth-card">
-    <h1 class="auth-card-title">QUÊN MẬT KHẨU</h1>
+    <h1 class="auth-card-title">GỬI LẠI XÁC NHẬN</h1>
 
     @if (Model.EmailSent)
     {
         <div class="auth-alert-success">
             <span class="auth-alert-icon">✓</span>
             <span class="auth-alert-text">
-                Nếu email tồn tại trong hệ thống, link đặt lại mật khẩu đã được gửi.
+                Nếu email tồn tại và chưa xác nhận, link xác nhận đã được gửi lại.
                 Vui lòng kiểm tra hộp thư.
             </span>
         </div>
@@ -30,7 +30,7 @@
     else
     {
         <p style="color:#888;margin-bottom:24px;font-size:0.95em;">
-            Nhập email đăng ký của bạn để nhận link đặt lại mật khẩu.
+            Nhập email đăng ký để nhận lại link xác nhận tài khoản.
         </p>
 
         <form method="post">
@@ -40,15 +40,12 @@
 
             <div class="auth-field">
                 <label asp-for="Input.Email">Email <span class="required-star">*</span></label>
-                <input asp-for="Input.Email"
-                       class="auth-input"
-                       placeholder="Nhập email của bạn"
-                       type="email" />
+                <input asp-for="Input.Email" class="auth-input" placeholder="Nhập email của bạn" type="email" />
                 <span asp-validation-for="Input.Email" class="auth-error-msg"></span>
             </div>
 
             <div style="margin-top: 24px;">
-                <button type="submit" class="btn-auth-primary">Gửi link đặt lại</button>
+                <button type="submit" class="btn-auth-primary">Gửi lại link xác nhận</button>
             </div>
         </form>
         <div class="auth-login-footer">

@@ -52,6 +52,10 @@ try
         options.Password.RequireDigit = true;
         options.Password.RequiredLength = 8;
         options.User.RequireUniqueEmail = true;
+        options.SignIn.RequireConfirmedEmail = true;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -81,8 +85,33 @@ try
 
             options.RequireProofKeyForCodeExchange();
 
-            options.AddDevelopmentEncryptionCertificate()
-                   .AddDevelopmentSigningCertificate();
+            if (builder.Environment.IsDevelopment())
+            {
+                options.AddDevelopmentEncryptionCertificate()
+                       .AddDevelopmentSigningCertificate();
+            }
+            else
+            {
+                var encryptionCertPath = builder.Configuration["OpenIddict:Certificates:EncryptionCertPath"];
+                var signingCertPath = builder.Configuration["OpenIddict:Certificates:SigningCertPath"];
+                var certPassword = builder.Configuration["OpenIddict:Certificates:Password"] ?? "";
+
+                if (!string.IsNullOrEmpty(encryptionCertPath) && !string.IsNullOrEmpty(signingCertPath))
+                {
+                    options.AddEncryptionCertificate(
+                        new System.Security.Cryptography.X509Certificates.X509Certificate2(
+                            encryptionCertPath, certPassword));
+                    options.AddSigningCertificate(
+                        new System.Security.Cryptography.X509Certificates.X509Certificate2(
+                            signingCertPath, certPassword));
+                }
+                else
+                {
+                    // Fallback: ephemeral keys — tokens won't survive restarts, but app won't crash
+                    options.AddEphemeralEncryptionKey()
+                           .AddEphemeralSigningKey();
+                }
+            }
 
             options.UseAspNetCore()
                    .EnableTokenEndpointPassthrough()
@@ -106,7 +135,32 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Description = "Enter your access token (without 'Bearer ' prefix)"
+        });
+        options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
 
     // CORS — allow App.Web origin (configurable via Cors:AllowedOrigins)
     var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
@@ -122,7 +176,7 @@ try
         });
     });
 
-    // Rate limiting — 10 requests/minute per IP on /connect/token
+    // Rate limiting — 10 requests/minute per IP on /connect/token; 5/min on login page
     builder.Services.AddRateLimiter(options =>
     {
         options.AddPolicy("TokenEndpoint", context =>
@@ -135,15 +189,29 @@ try
                     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                     QueueLimit = 0
                 }));
+
+        options.AddPolicy("LoginPage", context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                }));
+
         options.RejectionStatusCode = 429;
     });
 
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<AuditLogService>();
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
     builder.Services.AddScoped<PolicyEngine>();
     builder.Services.AddScoped<IAuthorizationHandler, PolicyAuthorizationHandler>();
     builder.Services.AddHttpContextAccessor();
+    builder.Services.AddHealthChecks();
 
     // Redis — optional, gracefully degrades if not configured
     var redisConn = builder.Configuration.GetConnectionString("Redis");
@@ -157,18 +225,30 @@ try
     // Authorization Policies
     builder.Services.AddAuthorization(options =>
     {
-        // Product permissions
+        // Product permissions — RBAC claim check + PBAC engine (PolicyRequirement)
         options.AddPolicy("ProductCreate", policy =>
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductCreate, App.Domain.Constants.Permissions.AdminAll));
+        {
+            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductCreate, App.Domain.Constants.Permissions.AdminAll);
+            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "create"));
+        });
 
         options.AddPolicy("ProductRead", policy =>
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductRead, App.Domain.Constants.Permissions.AdminAll));
+        {
+            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductRead, App.Domain.Constants.Permissions.AdminAll);
+            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "read"));
+        });
 
         options.AddPolicy("ProductUpdate", policy =>
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductUpdate, App.Domain.Constants.Permissions.AdminAll));
+        {
+            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductUpdate, App.Domain.Constants.Permissions.AdminAll);
+            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "update"));
+        });
 
         options.AddPolicy("ProductDelete", policy =>
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductDelete, App.Domain.Constants.Permissions.AdminAll));
+        {
+            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductDelete, App.Domain.Constants.Permissions.AdminAll);
+            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "delete"));
+        });
 
         // User permissions
         options.AddPolicy("UserRead", policy =>
@@ -176,6 +256,10 @@ try
 
         options.AddPolicy("UserManage", policy =>
             policy.RequireClaim("permission", App.Domain.Constants.Permissions.UserManage, App.Domain.Constants.Permissions.AdminAll));
+
+        // Platform permissions
+        options.AddPolicy("PlatformAdmin", policy =>
+            policy.RequireClaim("permission", App.Domain.Constants.Permissions.PlatformAdmin));
     });
 
     var app = builder.Build();
@@ -198,6 +282,8 @@ try
         context.Response.Headers["X-Frame-Options"] = "DENY";
         context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
         context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        context.Response.Headers["Content-Security-Policy"] =
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none';";
         if (!app.Environment.IsDevelopment())
             context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
         await next();
@@ -219,9 +305,11 @@ try
     app.UseSession();
     app.UseMiddleware<TenantResolverMiddleware>();
     app.UseAuthentication();
+    app.UseMiddleware<App.Infrastructure.Middleware.TokenBlacklistMiddleware>();
     app.UseAuthorization();
     app.MapRazorPages();
     app.MapControllers();
+    app.MapHealthChecks("/health");
 
     // Seed
     using (var scope = app.Services.CreateScope())

@@ -2,6 +2,7 @@
 @layout AdminLayout
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
+@rendermode InteractiveServer
 
 <PageTitle>User Management</PageTitle>
 
@@ -46,8 +47,10 @@ else
                                 @onclick="() => ToggleActive(u)">
                             @(u.IsActive ? "Deactivate" : "Activate")
                         </button>
-                        <button class="btn btn-sm btn-outline-primary"
+                        <button class="btn btn-sm btn-outline-primary me-1"
                                 @onclick="() => OpenRoles(u)">Roles</button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => ConfirmDelete(u)">Delete</button>
                     </td>
                 </tr>
             }
@@ -127,6 +130,28 @@ else
     </div>
 }
 
+@if (deleteUser is not null)
+{
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete User</h5>
+                    <button class="btn-close" @onclick="() => deleteUser = null"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to permanently delete <strong>@deleteUser.Email</strong>?</p>
+                    <p class="text-danger small">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => deleteUser = null">Cancel</button>
+                    <button class="btn btn-danger" @onclick="DeleteUser">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
 
@@ -142,6 +167,7 @@ else
 
     private UserDto? rolesUser;
     private HashSet<string> selectedRoles = [];
+    private UserDto? deleteUser;
 
     protected override async Task OnInitializedAsync()
     {
@@ -213,6 +239,16 @@ else
 
     private async Task PrevPage() { page--; await LoadUsers(); }
     private async Task NextPage() { page++; await LoadUsers(); }
+
+    private void ConfirmDelete(UserDto u) => deleteUser = u;
+
+    private async Task DeleteUser()
+    {
+        if (deleteUser is null) return;
+        await Api.DeleteAsync($"api/admin/users/{deleteUser.Id}");
+        deleteUser = null;
+        await LoadUsers();
+    }
 
     private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
     private record UserDto(Guid Id, string Email, string? FullName, bool IsActive, DateTime? LastLoginAt);

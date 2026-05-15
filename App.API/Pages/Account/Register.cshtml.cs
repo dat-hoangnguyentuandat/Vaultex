@@ -1,20 +1,23 @@
 using App.Application.DTOs;
-using App.Domain.Entities;
+using App.Application.Interfaces;
+using App.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace App.API.Pages.Account;
 
+[EnableRateLimiting("LoginPage")]
 public class RegisterModel : PageModel
 {
-    private readonly UserManager<User> _userManager;
-    private readonly ILogger<RegisterModel> _logger;
+    private readonly IAuthService _authService;
+    private readonly ITenantContext _tenantContext;
 
-    public RegisterModel(UserManager<User> userManager, ILogger<RegisterModel> logger)
+    public RegisterModel(IAuthService authService, ITenantContext tenantContext)
     {
-        _userManager = userManager;
-        _logger = logger;
+        _authService = authService;
+        _tenantContext = tenantContext;
     }
 
     public int Step { get; private set; } = 1;
@@ -105,10 +108,6 @@ public class RegisterModel : PageModel
         BindPwd();
         TryValidateModel(Pwd, nameof(Pwd));
 
-        var errors = ModelState.Where(x => x.Value?.Errors.Count > 0)
-                               .Select(x => $"{x.Key}: {x.Value!.Errors[0].ErrorMessage}")
-                               .ToList();
-
         TempData.Keep();
 
         if (!ModelState.IsValid)
@@ -118,41 +117,37 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        var user = new User
+        var registerDto = new RegisterDto
         {
-            UserName = email,
             Email = email,
-            PhoneNumber = TempData["reg_phone"] as string,
-            FullName = TempData["reg_name"] as string,
-            Company = TempData["reg_co"] as string,
-            Position = TempData["reg_pos"] as string,
-            DateOfBirth = DateOnly.TryParse(TempData["reg_dob"] as string, out var dob) ? dob : null,
-            EmailConfirmed = false,
+            PhoneNumber = TempData.Peek("reg_phone") as string ?? string.Empty,
+            Fullname = TempData.Peek("reg_name") as string,
+            Company = TempData.Peek("reg_co") as string,
+            Position = TempData.Peek("reg_pos") as string,
+            DateOfBirth = DateOnly.TryParse(TempData.Peek("reg_dob") as string, out var dob) ? dob : null,
         };
 
-        var result = await _userManager.CreateAsync(user, Pwd.Password);
-
-        if (result.Succeeded)
+        var passwordDto = new RegisterPasswordDto
         {
-            _logger.LogInformation(
-                "[AUDIT] REGISTER | UserId={UserId} | Email={Email}",
-                user.Id.ToString(), user.Email);
+            Password = Pwd.Password,
+            ConfirmPassword = Pwd.ConfirmPassword
+        };
+
+        try
+        {
+            await _authService.RegisterAsync(registerDto, passwordDto, _tenantContext.TenantId);
 
             ShowSuccess = true;
             Step = 2;
             return Page();
         }
-
-        foreach (var error in result.Errors)
-            ServerErrors.Add(TranslateError(error));
-
-        _logger.LogWarning(
-            "[AUDIT] SECURITY | Event=REGISTER_FAILED | Email={Email} | Errors={Errors}",
-            email, string.Join(", ", result.Errors.Select(e => e.Code)));
-
-        Step = 2;
-        RestoreInfoFromTempData();
-        return Page();
+        catch (Exception ex)
+        {
+            ServerErrors.Add(ex.Message);
+            Step = 2;
+            RestoreInfoFromTempData();
+            return Page();
+        }
     }
 
     private void RestoreInfoFromTempData()

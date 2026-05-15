@@ -2,10 +2,11 @@
 bin/
 obj/
 .claude/
-claude_code_project
 
 *.user
 *.suo
+
+App.Tests/
 
 node_modules/
 

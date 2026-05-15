@@ -2,6 +2,7 @@
 @layout AdminLayout
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
+@rendermode InteractiveServer
 
 <PageTitle>Audit Log</PageTitle>
 
@@ -76,6 +77,16 @@ else
                 <dt class="col-3">Resource</dt><dd class="col-9">@selected.ResourceType / @selected.ResourceId</dd>
                 <dt class="col-3">IP</dt><dd class="col-9">@selected.IpAddress</dd>
                 <dt class="col-3">Timestamp</dt><dd class="col-9">@selected.Timestamp.ToString("o")</dd>
+                    @if (!string.IsNullOrEmpty(selected.OldValue))
+                    {
+                        <dt class="col-3">Old Value</dt>
+                        <dd class="col-9"><code class="text-break">@selected.OldValue</code></dd>
+                    }
+                    @if (!string.IsNullOrEmpty(selected.NewValue))
+                    {
+                        <dt class="col-3">New Value</dt>
+                        <dd class="col-9"><code class="text-break">@selected.NewValue</code></dd>
+                    }
             </dl>
         </div>
     </div>
@@ -114,14 +125,31 @@ else
 
     private static string BadgeClass(string eventType) => eventType switch
     {
-        "LOGIN_SUCCESS" => "bg-success",
-        "LOGIN_FAILED"  => "bg-danger",
-        "LOGOUT"        => "bg-secondary",
-        "ACCESS_DENIED" => "bg-warning text-dark",
-        _               => "bg-info text-dark"
+        "LOGIN_SUCCESS"          => "bg-success",
+        "LOGIN_FAILED"           => "bg-danger",
+        "LOGOUT"                 => "bg-secondary",
+        "ACCESS_DENIED"          => "bg-warning text-dark",
+        "REGISTER"               => "bg-primary",
+        "EMAIL_CONFIRMED"        => "bg-success",
+        "PASSWORD_RESET"         => "bg-warning text-dark",
+        "PASSWORD_CHANGED"       => "bg-warning text-dark",
+        "PROFILE_UPDATED"        => "bg-info text-dark",
+        "USER_CREATED"           => "bg-primary",
+        "USER_DELETED"           => "bg-danger",
+        "USER_STATUS_CHANGED"    => "bg-warning text-dark",
+        "ROLE_CHANGED"           => "bg-info text-dark",
+        "POLICY_CHANGED"         => "bg-info text-dark",
+        "TENANT_CREATED"         => "bg-primary",
+        "TENANT_UPDATED"         => "bg-info text-dark",
+        "TENANT_STATUS_CHANGED"  => "bg-warning text-dark",
+        "PRODUCT_CREATED"        => "bg-primary",
+        "PRODUCT_UPDATED"        => "bg-info text-dark",
+        "PRODUCT_DELETED"        => "bg-danger",
+        _                        => "bg-secondary"
     };
 
     private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
     private record AuditDto(Guid Id, Guid? TenantId, Guid? UserId, string EventType,
-        string? ResourceType, string? ResourceId, string? IpAddress, DateTime Timestamp);
+        string? ResourceType, string? ResourceId, string? IpAddress, DateTime Timestamp,
+        string? OldValue, string? NewValue);
 }

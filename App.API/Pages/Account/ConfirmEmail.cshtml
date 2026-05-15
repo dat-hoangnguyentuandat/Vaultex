@@ -1,0 +1,51 @@
+@page "/account/confirm-email"
+@model App.API.Pages.Account.ConfirmEmailModel
+@{
+    ViewData["Title"] = "Xác nhận email";
+}
+
+<div class="auth-logo">
+    <img src="/favicon.png" alt="logo" />
+    <span class="auth-logo-text">Vaultex</span>
+</div>
+
+<div class="auth-card">
+    <h1 class="auth-card-title">XÁC NHẬN EMAIL</h1>
+
+    @if (Model.InvalidLink)
+    {
+        <div class="auth-alert-error">
+            <span class="auth-alert-icon">⚠</span>
+            <span class="auth-alert-text">Link không hợp lệ hoặc đã hết hạn.</span>
+        </div>
+        <div style="margin-top: 24px;">
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
+                Về trang đăng nhập
+            </a>
+        </div>
+    }
+    else if (Model.ShowSuccess)
+    {
+        <div class="auth-alert-success">
+            <span class="auth-alert-icon">✓</span>
+            <span class="auth-alert-text">Email đã được xác nhận thành công. Bạn có thể đăng nhập ngay.</span>
+        </div>
+        <div style="margin-top: 24px;">
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
+                Đăng nhập
+            </a>
+        </div>
+    }
+    else if (Model.AlreadyConfirmed)
+    {
+        <div class="auth-alert-success">
+            <span class="auth-alert-icon">✓</span>
+            <span class="auth-alert-text">Email này đã được xác nhận trước đó.</span>
+        </div>
+        <div style="margin-top: 24px;">
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
+                Đăng nhập
+            </a>
+        </div>
+    }
+</div>

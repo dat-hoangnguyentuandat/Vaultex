@@ -1,6 +1,7 @@
 ﻿using App.Application.DTOs;
 using App.Application.Interfaces;
 using App.Domain.Entities;
+using App.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,11 +29,10 @@ namespace App.API.Controllers
         private Guid GetCurrentUserId()
         {
             var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
-            return Guid.Parse(userId!);
+            return Guid.TryParse(userId, out var id) ? id : Guid.Empty;
         }
 
         [HttpPost]
-        // [Authorize(Roles = "Admin,Manager")]
         [Authorize(Policy = "ProductCreate")]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto dto)
         {
@@ -42,7 +42,6 @@ namespace App.API.Controllers
         }
 
         [HttpGet("{id}")]
-        // [Authorize(Roles = "Admin,Manager,Employee,Viewer")]
         [Authorize(Policy = "ProductRead")]
         public async Task<IActionResult> GetProductById(Guid id)
         {
@@ -52,32 +51,42 @@ namespace App.API.Controllers
         }
 
         [HttpGet]
-        // [Authorize(Roles = "Admin,Manager,Employee,Viewer")]
         [Authorize(Policy = "ProductRead")]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var products = await _productService.GetAllProductsAsync();
-            return Ok(products);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await _productService.GetAllProductsAsync(page, pageSize);
+            return Ok(result);
         }
 
         [HttpPut("{id}")]
-        // [Authorize(Roles = "Admin,Manager,Employee")]
         [Authorize(Policy = "ProductUpdate")]
         public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] CreateProductDto dto)
         {
             var userId = GetCurrentUserId();
-            var product = await _productService.UpdateProductAsync(id, dto, userId);
-            return Ok(product);
+            try
+            {
+                var product = await _productService.UpdateProductAsync(id, dto, userId);
+                return Ok(product);
+            }
+            catch (NotFoundException ex) { return NotFound(new { error = ex.Message }); }
+            catch (ForbiddenException) { return Forbid(); }
         }
 
         [HttpDelete("{id}")]
-        // [Authorize(Roles = "Admin,Manager")]
         [Authorize(Policy = "ProductDelete")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var userId = GetCurrentUserId();
-            await _productService.DeleteProductAsync(id, userId);
-            return NoContent();
+            try
+            {
+                await _productService.DeleteProductAsync(id, userId);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(new { error = ex.Message }); }
+            catch (ForbiddenException) { return Forbid(); }
         }
     }
 }

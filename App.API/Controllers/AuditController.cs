@@ -70,6 +70,8 @@ namespace App.API.Controllers
                     a.EventType,
                     a.ResourceType,
                     a.ResourceId,
+                    a.OldValue,
+                    a.NewValue,
                     a.IpAddress,
                     a.Timestamp
                 })

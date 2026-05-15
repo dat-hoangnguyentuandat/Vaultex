@@ -52,8 +52,6 @@ namespace App.Infrastructure.Data
             });
 
             // Global query filters — auto-scope all queries to current tenant
-            var tenantId = _tenantContext?.TenantId;
-
             builder.Entity<User>()
                 .HasQueryFilter(u => !_tenantContext!.IsResolved || u.TenantId == _tenantContext.TenantId);
 
@@ -63,12 +61,16 @@ namespace App.Infrastructure.Data
             builder.Entity<Product>()
                 .HasQueryFilter(p => !_tenantContext!.IsResolved || p.TenantId == _tenantContext.TenantId);
 
+            builder.Entity<Product>()
+                .HasIndex(p => p.TenantId);
+
             builder.Entity<Policy>(e =>
             {
                 e.HasOne(p => p.Tenant)
                  .WithMany()
                  .HasForeignKey(p => p.TenantId)
                  .OnDelete(DeleteBehavior.Restrict);
+                e.HasIndex(p => p.TenantId);
             });
 
             builder.Entity<Policy>()

@@ -1,0 +1,227 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>My Profile</PageTitle>
+
+<h3>My Profile</h3>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else if (profile is not null)
+{
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Profile Information</div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(profileSuccess))
+                    {
+                        <div class="alert alert-success">@profileSuccess</div>
+                    }
+                    @if (profileErrors.Count > 0)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var e in profileErrors) { <div>@e</div> }
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input class="form-control" value="@profile.Email" disabled />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input class="form-control" @bind="editFullName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input class="form-control" @bind="editPhone" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date of Birth</label>
+                        <input class="form-control" type="date" @bind="editDob" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Company</label>
+                        <input class="form-control" @bind="editCompany" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Position</label>
+                        <input class="form-control" @bind="editPosition" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="SaveProfile" disabled="@savingProfile">
+                        @(savingProfile ? "Saving..." : "Save Changes")
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">Change Password</div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(pwdSuccess))
+                    {
+                        <div class="alert alert-success">@pwdSuccess</div>
+                    }
+                    @if (pwdErrors.Count > 0)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var e in pwdErrors) { <div>@e</div> }
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input class="form-control" type="password" @bind="currentPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input class="form-control" type="password" @bind="newPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input class="form-control" type="password" @bind="confirmPassword" />
+                    </div>
+                    <button class="btn btn-warning" @onclick="ChangePassword" disabled="@savingPwd">
+                        @(savingPwd ? "Saving..." : "Change Password")
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Account Info</div>
+                <div class="card-body text-muted small">
+                    <div>Member since: @profile.CreatedAt.ToString("yyyy-MM-dd")</div>
+                    @if (profile.LastLoginAt.HasValue)
+                    {
+                        <div>Last login: @profile.LastLoginAt.Value.ToString("yyyy-MM-dd HH:mm") UTC</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
+
+    private ProfileDto? profile;
+    private bool loading = true;
+
+    private string? editFullName;
+    private string? editPhone;
+    private DateOnly? editDob;
+    private string? editCompany;
+    private string? editPosition;
+
+    private bool savingProfile;
+    private string? profileSuccess;
+    private List<string> profileErrors = [];
+
+    private string currentPassword = "";
+    private string newPassword = "";
+    private string confirmPassword = "";
+    private bool savingPwd;
+    private string? pwdSuccess;
+    private List<string> pwdErrors = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        profile = await Api.CallApiAsync<ProfileDto>("api/auth/profile");
+        if (profile is not null)
+        {
+            editFullName = profile.FullName;
+            editPhone = profile.PhoneNumber;
+            editDob = profile.DateOfBirth;
+            editCompany = profile.Company;
+            editPosition = profile.Position;
+        }
+        loading = false;
+    }
+
+    private async Task SaveProfile()
+    {
+        profileSuccess = null;
+        profileErrors = [];
+        savingProfile = true;
+
+        var response = await Api.PutAsync("api/auth/profile", new
+        {
+            FullName = editFullName,
+            PhoneNumber = editPhone,
+            DateOfBirth = editDob?.ToString("yyyy-MM-dd"),
+            Company = editCompany,
+            Position = editPosition
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            profileSuccess = "Profile updated successfully.";
+            profile = await Api.CallApiAsync<ProfileDto>("api/auth/profile");
+        }
+        else
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            profileErrors.Add(string.IsNullOrWhiteSpace(body) ? "Failed to update profile." : body);
+        }
+
+        savingProfile = false;
+    }
+
+    private async Task ChangePassword()
+    {
+        pwdSuccess = null;
+        pwdErrors = [];
+
+        if (newPassword != confirmPassword)
+        {
+            pwdErrors.Add("New passwords do not match.");
+            return;
+        }
+
+        if (newPassword.Length < 8)
+        {
+            pwdErrors.Add("Password must be at least 8 characters.");
+            return;
+        }
+
+        savingPwd = true;
+
+        var response = await Api.PostAsync("api/auth/change-password", new
+        {
+            CurrentPassword = currentPassword,
+            NewPassword = newPassword
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            pwdSuccess = "Password changed successfully.";
+            currentPassword = "";
+            newPassword = "";
+            confirmPassword = "";
+        }
+        else
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            pwdErrors.Add(string.IsNullOrWhiteSpace(body) ? "Failed to change password." : body);
+        }
+
+        savingPwd = false;
+    }
+
+    private record ProfileDto(
+        Guid Id,
+        string Email,
+        string? FullName,
+        string? PhoneNumber,
+        DateOnly? DateOfBirth,
+        string? Company,
+        string? Position,
+        DateTime CreatedAt,
+        DateTime? LastLoginAt);
+}

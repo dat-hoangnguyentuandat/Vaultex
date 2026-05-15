@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace App.Domain.Constants
+﻿namespace App.Domain.Constants
 {
     public static class Roles
     {
@@ -12,6 +6,7 @@ namespace App.Domain.Constants
         public const string Manager = "Manager";
         public const string Employee = "Employee";
         public const string Viewer = "Viewer";
+        public const string PlatformAdmin = "PlatformAdmin";
 
         public static readonly string[] All = { Admin, Manager, Employee, Viewer };
     }
@@ -30,6 +25,9 @@ namespace App.Domain.Constants
 
         // Admin
         public const string AdminAll = "admin:*";
+
+        // Platform
+        public const string PlatformAdmin = "platform:admin";
     }
 
     public static class RolePermissions
@@ -62,6 +60,13 @@ namespace App.Domain.Constants
             [Roles.Viewer] = new[]
             {
                 Permissions.ProductRead,
+            },
+            [Roles.PlatformAdmin] = new[]
+            {
+                Permissions.PlatformAdmin,
+                Permissions.AdminAll,
+                Permissions.UserRead,
+                Permissions.UserManage,
             },
         };
     }

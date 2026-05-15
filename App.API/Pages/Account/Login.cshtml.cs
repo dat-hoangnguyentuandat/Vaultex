@@ -1,25 +1,28 @@
 using App.Application.DTOs;
 using App.Domain.Entities;
+using App.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace App.API.Pages.Account;
 
+[EnableRateLimiting("LoginPage")]
 public class LoginModel : PageModel
 {
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
-    private readonly ILogger<LoginModel> _logger;
+    private readonly AuditLogService _auditLog;
 
     public LoginModel(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
-        ILogger<LoginModel> logger)
+        AuditLogService auditLog)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-        _logger = logger;
+        _auditLog = auditLog;
     }
 
     [BindProperty]
@@ -27,6 +30,7 @@ public class LoginModel : PageModel
 
     public string? ReturnUrl { get; set; }
     public string? ErrorMessage { get; set; }
+    public bool EmailNotConfirmed { get; private set; }
 
     public void OnGet(string? returnUrl = null, string? error = null)
     {
@@ -47,15 +51,11 @@ public class LoginModel : PageModel
         if (!ModelState.IsValid)
             return Page();
 
-        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var user = await _userManager.FindByEmailAsync(Input.Email);
 
         if (user is null || !user.IsActive)
         {
-            _logger.LogWarning(
-                "[AUDIT] SECURITY | Event=LOGIN_INACTIVE_OR_NOT_FOUND | Email={Email} | IP={IpAddress}",
-                Input.Email, ip);
-
+            await _auditLog.LogAsync(App.Domain.Entities.AuditEventTypes.LoginFailed, null);
             ModelState.AddModelError(string.Empty,
                 "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.");
             return Page();
@@ -64,11 +64,7 @@ public class LoginModel : PageModel
         if (await _userManager.IsLockedOutAsync(user))
         {
             var until = user.LockoutEnd!.Value.LocalDateTime.ToString("HH:mm");
-
-            _logger.LogWarning(
-                "[AUDIT] SECURITY | Event=LOGIN_BLOCKED_LOCKOUT | UserId={UserId} | Email={Email} | IP={IpAddress} | Until={Until}",
-                user.Id.ToString(), user.Email, ip, until);
-
+            await _auditLog.LogAsync(App.Domain.Entities.AuditEventTypes.LoginFailed, user.TenantId, user.Id);
             ModelState.AddModelError(string.Empty,
                 $"Tài khoản tạm thời bị khoá do đăng nhập sai nhiều lần. Vui lòng thử lại sau {until}.");
             return Page();
@@ -84,10 +80,7 @@ public class LoginModel : PageModel
         {
             user.LastLoginAt = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
-
-            _logger.LogInformation(
-                "[AUDIT] LOGIN_SUCCESS | UserId={UserId} | Email={Email} | IP={IpAddress}",
-                user.Id.ToString(), user.Email, ip);
+            await _auditLog.LogAsync(App.Domain.Entities.AuditEventTypes.LoginSuccess, user.TenantId, user.Id);
 
             var destination = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
                 ? returnUrl
@@ -96,21 +89,23 @@ public class LoginModel : PageModel
             return Redirect(destination);
         }
 
+        if (result.IsNotAllowed)
+        {
+            EmailNotConfirmed = true;
+            ModelState.AddModelError(string.Empty,
+                "Email chưa được xác nhận. Vui lòng kiểm tra hộp thư và nhấn link xác nhận.");
+            return Page();
+        }
+
         if (result.IsLockedOut)
         {
-            _logger.LogWarning(
-                "[AUDIT] SECURITY | Event=LOGIN_TRIGGERED_LOCKOUT | UserId={UserId} | Email={Email} | IP={IpAddress}",
-                user.Id.ToString(), user.Email, ip);
-
+            await _auditLog.LogAsync(App.Domain.Entities.AuditEventTypes.LoginFailed, user.TenantId, user.Id);
             ModelState.AddModelError(string.Empty,
                 "Tài khoản tạm thời bị khoá do đăng nhập sai quá 5 lần. Vui lòng thử lại sau 15 phút.");
             return Page();
         }
 
-        _logger.LogWarning(
-            "[AUDIT] LOGIN_FAILED | UserId={UserId} | Email={Email} | IP={IpAddress}",
-            user.Id.ToString(), user.Email, ip);
-
+        await _auditLog.LogAsync(App.Domain.Entities.AuditEventTypes.LoginFailed, user.TenantId, user.Id);
         ModelState.AddModelError(string.Empty,
             "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.");
         return Page();

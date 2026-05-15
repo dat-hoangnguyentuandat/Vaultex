@@ -26,7 +26,6 @@ public class AuthorizationController : ControllerBase
     private readonly IOpenIddictAuthorizationManager _authorizationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly IOpenIddictTokenManager _tokenManager;
-    private readonly ILogger<AuthorizationController> _logger;
     private readonly AuditLogService _auditLog;
     private readonly ITenantContext _tenantContext;
     private readonly TokenBlacklistService _blacklist;
@@ -38,7 +37,6 @@ public class AuthorizationController : ControllerBase
         IOpenIddictAuthorizationManager authorizationManager,
         IOpenIddictScopeManager scopeManager,
         IOpenIddictTokenManager tokenManager,
-        ILogger<AuthorizationController> logger,
         AuditLogService auditLog,
         ITenantContext tenantContext,
         TokenBlacklistService blacklist)
@@ -49,7 +47,6 @@ public class AuthorizationController : ControllerBase
         _authorizationManager = authorizationManager;
         _scopeManager = scopeManager;
         _tokenManager = tokenManager;
-        _logger = logger;
         _auditLog = auditLog;
         _tenantContext = tenantContext;
         _blacklist = blacklist;
@@ -145,6 +142,14 @@ public class AuthorizationController : ControllerBase
         var user = await _userManager.GetUserAsync(result.Principal)
             ?? throw new InvalidOperationException("The user details cannot be retrieved.");
 
+        if (!user.IsActive)
+        {
+            return Challenge(new AuthenticationProperties
+            {
+                RedirectUri = "/account/login?error=inactive"
+            });
+        }
+
         var application = await _applicationManager.FindByClientIdAsync(request.ClientId!)
             ?? throw new InvalidOperationException("The application cannot be found.");
 
@@ -223,6 +228,12 @@ public class AuthorizationController : ControllerBase
             }
 
             var checkResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password!, lockoutOnFailure: true);
+
+            if (checkResult.IsNotAllowed)
+            {
+                await _auditLog.LogAsync(AuditEventTypes.LoginFailed, user.TenantId, user.Id);
+                return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
 
             if (!checkResult.Succeeded)
             {
@@ -357,10 +368,6 @@ public class AuthorizationController : ControllerBase
         }
 
         await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-
-        _logger.LogInformation(
-            "[AUDIT] LOGOUT | UserId={UserId} | Username={Username}",
-            userId ?? "unknown", username);
 
         return SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,

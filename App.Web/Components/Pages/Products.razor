@@ -96,6 +96,37 @@
                     </tbody>
                 </table>
             </div>
+
+            @if (TotalPages > 1)
+            {
+                <div style="display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+                    @if (_page > 1)
+                    {
+                        <a href="/products?page=@(_page - 1)" class="btn btn-sm btn-outline-secondary">‹</a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" disabled>‹</button>
+                    }
+                    @for (int i = 1; i <= TotalPages; i++)
+                    {
+                        var pg = i;
+                        <a href="/products?page=@pg"
+                           class="btn btn-sm @(_page == pg ? "btn-primary" : "btn-outline-secondary")">@pg</a>
+                    }
+                    @if (_page < TotalPages)
+                    {
+                        <a href="/products?page=@(_page + 1)" class="btn btn-sm btn-outline-secondary">›</a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" disabled>›</button>
+                    }
+                </div>
+                <p style="text-align: center; color: #6b7280; font-size: 0.85rem; margin-top: 8px;">
+                    Trang @_page / @TotalPages — @_total sản phẩm
+                </p>
+            }
         }
 
         <div style="margin-top: 20px;">

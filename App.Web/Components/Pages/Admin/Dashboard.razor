@@ -57,6 +57,9 @@
     {
         try
         {
+            var tenant = await Api.CallApiAsync<TenantDto>("api/admin/tenant");
+            tenantName = tenant?.Name ?? "Unknown";
+
             var users = await Api.CallApiAsync<PagedResult<UserSummary>>("api/admin/users?pageSize=1");
             userCount = users?.Total ?? 0;
 
@@ -74,4 +77,5 @@
 
     private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
     private record UserSummary(Guid Id, string Email, string? FullName, bool IsActive);
+    private record TenantDto(Guid Id, string Name, string Subdomain, string Region, string Status);
 }

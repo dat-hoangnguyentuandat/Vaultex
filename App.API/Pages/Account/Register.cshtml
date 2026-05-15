@@ -14,7 +14,7 @@
     <div class="auth-card">
         <h1 class="auth-card-title">ĐĂNG KÝ</h1>
 
-        <form method="post" asp-page-handler="Info" autocomplete="off" novalidate onsubmit="console.log('FORM STEP 1 SUBMITTING!'); return true;">
+        <form method="post" asp-page-handler="Info" autocomplete="off" novalidate>
             <div class="auth-row-2col">
                 <div class="auth-field">
                     <label>Email <span class="required-star">*</span></label>
@@ -121,6 +121,9 @@ else
                     <span class="success-icon">✓</span>
                     Tạo tài khoản thành công
                 </div>
+            </div>
+            <div class="auth-modal-body" style="padding: 0 24px 16px; color: #555; font-size: 0.95em;">
+                Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập.
             </div>
             <div class="auth-modal-footer">
                 <a href="/account/login" class="btn-modal-ok">OK</a>
