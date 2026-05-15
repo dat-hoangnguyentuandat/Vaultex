@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace App.API.Pages.Account;
 
-[EnableRateLimiting("LoginPage")]
 public class RegisterModel : PageModel
 {
     private readonly IAuthService _authService;
@@ -98,6 +97,7 @@ public class RegisterModel : PageModel
         return RedirectToPage(new { step = 2 });
     }
 
+    [EnableRateLimiting("RegistrationSubmit")]
     public async Task<IActionResult> OnPostRegisterAsync()
     {
         var email = TempData["reg_email"] as string;

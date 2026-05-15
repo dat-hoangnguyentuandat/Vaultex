@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace App.API.Pages.Account;
 
-[EnableRateLimiting("LoginPage")]
 public class ResendConfirmationModel : PageModel
 {
     private readonly IAuthService _authService;
@@ -23,6 +22,7 @@ public class ResendConfirmationModel : PageModel
 
     public void OnGet() { }
 
+    [EnableRateLimiting("ConfirmationEmail")]
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)

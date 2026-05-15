@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace App.API.Pages.Account;
 
-[EnableRateLimiting("LoginPage")]
 public class ForgotPasswordModel : PageModel
 {
     private readonly IAuthService _authService;
@@ -23,6 +22,7 @@ public class ForgotPasswordModel : PageModel
 
     public void OnGet() { }
 
+    [EnableRateLimiting("PasswordRecovery")]
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)

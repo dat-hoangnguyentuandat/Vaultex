@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace App.API.Pages.Account;
 
-[EnableRateLimiting("LoginPage")]
 public class LoginModel : PageModel
 {
     private readonly SignInManager<User> _signInManager;
@@ -44,6 +43,7 @@ public class LoginModel : PageModel
         };
     }
 
+    [EnableRateLimiting("LoginSubmit")]
     public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
     {
         ReturnUrl = returnUrl;
