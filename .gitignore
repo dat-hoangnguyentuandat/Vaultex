@@ -13,3 +13,5 @@ node_modules/
 wwwroot/lib/
 
 appsettings.Development.json
+
+.env

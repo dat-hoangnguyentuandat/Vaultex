@@ -4,96 +4,109 @@
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-<PageTitle>Tenant Management</PageTitle>
+<PageTitle>Tenants — Vaultex Admin</PageTitle>
 
-<h3>Tenants</h3>
-
-<div class="d-flex justify-content-between mb-3">
-    <input class="form-control w-25" placeholder="Search name or subdomain..."
-           @bind="search" @bind:event="oninput" @onkeyup="LoadTenants" />
-    <button class="btn btn-primary" @onclick="() => showCreate = true">+ New Tenant</button>
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Tenants</div>
+        <div class="apage-subtitle">Manage all tenants on this platform</div>
+    </div>
+    <button class="abtn abtn--primary" @onclick="() => showCreate = true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New Tenant
+    </button>
 </div>
 
-@if (loading)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Subdomain</th>
-                <th>Region</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Users</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var t in tenants)
-            {
-                <tr>
-                    <td>@t.Name</td>
-                    <td><code>@t.Subdomain</code></td>
-                    <td>@t.Region</td>
-                    <td>
-                        <span class="badge @StatusBadge(t.Status)">@t.Status</span>
-                    </td>
-                    <td>@t.CreatedAt.ToString("dd/MM/yyyy")</td>
-                    <td>@(t.UserCount?.ToString() ?? "—")</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-secondary me-1"
-                                @onclick="() => OpenEdit(t)">Edit</button>
-                        <button class="btn btn-sm btn-outline-primary me-1"
-                                @onclick="() => OpenCreateAdmin(t)">+ Admin</button>
-                        @if (t.Status == "Active")
-                        {
-                            <button class="btn btn-sm btn-outline-warning"
-                                    @onclick="() => SuspendTenant(t)">Suspend</button>
-                        }
-                        else if (t.Status == "Suspended")
-                        {
-                            <button class="btn btn-sm btn-outline-success"
-                                    @onclick="() => ActivateTenant(t)">Activate</button>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(currentPage <= 1)" @onclick="PrevPage">‹ Prev</button>
-        <span>Page @currentPage of @totalPages</span>
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Next ›</button>
+<div class="acard">
+    <div class="acard-toolbar">
+        <div class="asearch-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="asearch-input" placeholder="Search name or subdomain..."
+                   @bind="search" @bind:event="oninput" @onkeyup="LoadTenants" />
+        </div>
     </div>
-}
+
+    @if (loading)
+    {
+        <div class="atable-loading"><div class="atable-spinner"></div></div>
+    }
+    else if (tenants.Count == 0)
+    {
+        <div class="atable-empty">No tenants found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable">
+                <thead>
+                    <tr>
+                        <th>Tenant</th>
+                        <th>Region</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Users</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in tenants)
+                    {
+                        <tr>
+                            <td>
+                                <div class="afont-medium">@t.Name</div>
+                                <div class="atext-muted"><code class="acode">@t.Subdomain</code></div>
+                            </td>
+                            <td class="atext-muted">@t.Region</td>
+                            <td>
+                                <span class="abadge @TenantBadgeClass(t.Status)">@t.Status</span>
+                            </td>
+                            <td class="atext-muted">@t.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="atext-muted">@(t.UserCount?.ToString() ?? "—")</td>
+                            <td>
+                                <div class="arow-actions">
+                                    <button class="abtn-ghost" @onclick="() => OpenEdit(t)">Edit</button>
+                                    <button class="abtn-ghost" @onclick="() => OpenCreateAdmin(t)">+ Admin</button>
+                                    @if (t.Status == "Active")
+                                    {
+                                        <button class="abtn-ghost abtn-ghost--warning" @onclick="() => SuspendTenant(t)">Suspend</button>
+                                    }
+                                    else if (t.Status == "Suspended")
+                                    {
+                                        <button class="abtn-ghost abtn-ghost--success" @onclick="() => ActivateTenant(t)">Activate</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="apagination">
+            <button class="abtn-page" disabled="@(currentPage <= 1)" @onclick="PrevPage">‹ Prev</button>
+            <span class="apagination-info">Page @(currentPage) of @(totalPages)</span>
+            <button class="abtn-page" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Next ›</button>
+        </div>
+    }
+</div>
 
 @if (showCreate)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Tenant</h5>
-                    <button class="btn-close" @onclick="() => showCreate = false"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2"><label>Name</label><input class="form-control" @bind="newName" /></div>
-                    <div class="mb-2"><label>Subdomain</label><input class="form-control" @bind="newSubdomain" placeholder="e.g. acme" /></div>
-                    <div class="mb-2"><label>Region</label><input class="form-control" @bind="newRegion" /></div>
-                    @if (!string.IsNullOrEmpty(createError))
-                    {
-                        <div class="alert alert-danger">@createError</div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => showCreate = false">Cancel</button>
-                    <button class="btn btn-primary" @onclick="CreateTenant">Create</button>
-                </div>
+    <div class="amodal-overlay" @onclick="() => showCreate = false">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Create Tenant</div>
+                <button class="amodal-close" @onclick="() => showCreate = false">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Name</label><input class="aform-input" @bind="newName" placeholder="Acme Corp" /></div>
+                <div class="aform-field"><label class="aform-label">Subdomain</label><input class="aform-input" @bind="newSubdomain" placeholder="acme" /></div>
+                <div class="aform-field"><label class="aform-label">Region</label><input class="aform-input" @bind="newRegion" placeholder="us-east-1" /></div>
+                @if (!string.IsNullOrEmpty(createError)) { <div class="aform-error">@createError</div> }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => showCreate = false">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="CreateTenant">Create</button>
             </div>
         </div>
     </div>
@@ -101,21 +114,19 @@ else
 
 @if (editTenant is not null)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit — @editTenant.Subdomain</h5>
-                    <button class="btn-close" @onclick="() => editTenant = null"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2"><label>Name</label><input class="form-control" @bind="editName" /></div>
-                    <div class="mb-2"><label>Region</label><input class="form-control" @bind="editRegion" /></div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => editTenant = null">Cancel</button>
-                    <button class="btn btn-primary" @onclick="SaveEdit">Save</button>
-                </div>
+    <div class="amodal-overlay" @onclick="() => editTenant = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Edit — @editTenant.Subdomain</div>
+                <button class="amodal-close" @onclick="() => editTenant = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Name</label><input class="aform-input" @bind="editName" /></div>
+                <div class="aform-field"><label class="aform-label">Region</label><input class="aform-input" @bind="editRegion" /></div>
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => editTenant = null">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="SaveEdit">Save</button>
             </div>
         </div>
     </div>
@@ -123,138 +134,23 @@ else
 
 @if (adminTenant is not null)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Admin — @adminTenant.Name</h5>
-                    <button class="btn-close" @onclick="() => adminTenant = null"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2"><label>Email</label><input class="form-control" @bind="adminEmail" /></div>
-                    <div class="mb-2"><label>Full Name</label><input class="form-control" @bind="adminFullName" /></div>
-                    <div class="mb-2"><label>Password</label><input type="password" class="form-control" @bind="adminPassword" /></div>
-                    @if (!string.IsNullOrEmpty(adminError))
-                    {
-                        <div class="alert alert-danger">@adminError</div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => adminTenant = null">Cancel</button>
-                    <button class="btn btn-primary" @onclick="CreateAdmin">Create</button>
-                </div>
+    <div class="amodal-overlay" @onclick="() => adminTenant = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Create Admin — @adminTenant.Name</div>
+                <button class="amodal-close" @onclick="() => adminTenant = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Email</label><input class="aform-input" @bind="adminEmail" placeholder="admin@example.com" /></div>
+                <div class="aform-field"><label class="aform-label">Full Name</label><input class="aform-input" @bind="adminFullName" /></div>
+                <div class="aform-field"><label class="aform-label">Password</label><input class="aform-input" type="password" @bind="adminPassword" placeholder="••••••••" /></div>
+                @if (!string.IsNullOrEmpty(adminError)) { <div class="aform-error">@adminError</div> }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => adminTenant = null">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="CreateAdmin">Create</button>
             </div>
         </div>
     </div>
 }
 
-@code {
-    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
-
-    private List<TenantDto> tenants = [];
-    private bool loading = true;
-    private string search = "";
-    private int currentPage = 1, totalPages = 1;
-    private const int PageSize = 20;
-
-    private bool showCreate;
-    private string newName = "", newSubdomain = "", newRegion = "", createError = "";
-
-    private TenantDto? editTenant;
-    private string editName = "", editRegion = "";
-
-    private TenantDto? adminTenant;
-    private string adminEmail = "", adminFullName = "", adminPassword = "", adminError = "";
-
-    protected override async Task OnInitializedAsync() => await LoadTenants();
-
-    private async Task LoadTenants()
-    {
-        loading = true;
-        var result = await Api.CallApiAsync<PagedResult<TenantDto>>(
-            $"api/platform/tenants?search={Uri.EscapeDataString(search)}&page={currentPage}&pageSize={PageSize}");
-        tenants = result?.Items ?? [];
-        totalPages = result is null ? 1 : (int)Math.Ceiling(result.Total / (double)PageSize);
-        loading = false;
-    }
-
-    private async Task CreateTenant()
-    {
-        createError = "";
-        var resp = await Api.PostAsync("api/platform/tenants", new
-        {
-            Name = newName, Subdomain = newSubdomain, Region = newRegion
-        });
-        if (resp.IsSuccessStatusCode)
-        {
-            showCreate = false;
-            newName = newSubdomain = newRegion = "";
-            await LoadTenants();
-        }
-        else
-        {
-            createError = await resp.Content.ReadAsStringAsync();
-        }
-    }
-
-    private void OpenEdit(TenantDto t)
-    {
-        editTenant = t;
-        editName = t.Name;
-        editRegion = t.Region;
-    }
-
-    private async Task SaveEdit()
-    {
-        if (editTenant is null) return;
-        await Api.PutAsync($"api/platform/tenants/{editTenant.Id}", new { Name = editName, Region = editRegion });
-        editTenant = null;
-        await LoadTenants();
-    }
-
-    private async Task SetStatus(TenantDto t, string status)
-    {
-        await Api.PutAsync($"api/platform/tenants/{t.Id}/status?status={status}", new { });
-        await LoadTenants();
-    }
-
-    private Task SuspendTenant(TenantDto t) => SetStatus(t, "Suspended");
-    private Task ActivateTenant(TenantDto t) => SetStatus(t, "Active");
-
-    private void OpenCreateAdmin(TenantDto t)
-    {
-        adminTenant = t;
-        adminEmail = adminFullName = adminPassword = adminError = "";
-    }
-
-    private async Task CreateAdmin()
-    {
-        adminError = "";
-        var resp = await Api.PostAsync($"api/platform/tenants/{adminTenant!.Id}/admin", new
-        {
-            Email = adminEmail, Password = adminPassword, FullName = adminFullName
-        });
-        if (resp.IsSuccessStatusCode)
-        {
-            adminTenant = null;
-        }
-        else
-        {
-            adminError = await resp.Content.ReadAsStringAsync();
-        }
-    }
-
-    private async Task PrevPage() { currentPage--; await LoadTenants(); }
-    private async Task NextPage() { currentPage++; await LoadTenants(); }
-
-    private static string StatusBadge(string status) => status switch
-    {
-        "Active" => "bg-success",
-        "Suspended" => "bg-warning text-dark",
-        "Deleted" => "bg-danger",
-        _ => "bg-secondary"
-    };
-
-    private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
-    private record TenantDto(Guid Id, string Name, string Subdomain, string Region, string Status, DateTime CreatedAt, int? UserCount);
-}

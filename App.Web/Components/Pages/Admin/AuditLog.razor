@@ -4,152 +4,94 @@
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-<PageTitle>Audit Log</PageTitle>
+<PageTitle>Audit Log — Vaultex Admin</PageTitle>
 
-<h3>Audit Log</h3>
-
-<div class="row g-2 mb-3">
-    <div class="col-md-3">
-        <input class="form-control" placeholder="Event type..." @bind="filterEvent" @bind:event="oninput" />
-    </div>
-    <div class="col-md-3">
-        <input type="date" class="form-control" @bind="filterFrom" />
-    </div>
-    <div class="col-md-3">
-        <input type="date" class="form-control" @bind="filterTo" />
-    </div>
-    <div class="col-md-3">
-        <button class="btn btn-outline-primary w-100" @onclick="LoadLogs">Search</button>
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Audit Log</div>
+        <div class="apage-subtitle">@total total events</div>
     </div>
 </div>
 
-@if (loading)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table table-sm table-hover font-monospace">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Event</th>
-                <th>User ID</th>
-                <th>Resource</th>
-                <th>IP</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var e in logs)
-            {
-                <tr @onclick="() => selected = e" style="cursor:pointer"
-                    class="@(selected?.Id == e.Id ? "table-active" : "")">
-                    <td>@e.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</td>
-                    <td><span class="badge @BadgeClass(e.EventType)">@e.EventType</span></td>
-                    <td class="text-truncate" style="max-width:120px">@e.UserId</td>
-                    <td>@e.ResourceType @e.ResourceId</td>
-                    <td>@e.IpAddress</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(page <= 1)" @onclick="PrevPage">‹ Prev</button>
-        <span>Page @(page) — @total total events</span>
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(page >= totalPages)" @onclick="NextPage">Next ›</button>
-    </div>
-}
-
-@if (selected is not null)
-{
-    <div class="card mt-3">
-        <div class="card-header d-flex justify-content-between">
-            <span>Event Detail</span>
-            <button class="btn-close" @onclick="() => selected = null"></button>
+<div class="acard">
+    <div class="acard-toolbar acard-toolbar--wrap">
+        <div class="asearch-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="asearch-input" placeholder="Event type..." @bind="filterEvent" @bind:event="oninput" />
         </div>
-        <div class="card-body">
-            <dl class="row mb-0">
-                <dt class="col-3">ID</dt><dd class="col-9">@selected.Id</dd>
-                <dt class="col-3">Event</dt><dd class="col-9">@selected.EventType</dd>
-                <dt class="col-3">Tenant</dt><dd class="col-9">@selected.TenantId</dd>
-                <dt class="col-3">User</dt><dd class="col-9">@selected.UserId</dd>
-                <dt class="col-3">Resource</dt><dd class="col-9">@selected.ResourceType / @selected.ResourceId</dd>
-                <dt class="col-3">IP</dt><dd class="col-9">@selected.IpAddress</dd>
-                <dt class="col-3">Timestamp</dt><dd class="col-9">@selected.Timestamp.ToString("o")</dd>
-                    @if (!string.IsNullOrEmpty(selected.OldValue))
-                    {
-                        <dt class="col-3">Old Value</dt>
-                        <dd class="col-9"><code class="text-break">@selected.OldValue</code></dd>
-                    }
-                    @if (!string.IsNullOrEmpty(selected.NewValue))
-                    {
-                        <dt class="col-3">New Value</dt>
-                        <dd class="col-9"><code class="text-break">@selected.NewValue</code></dd>
-                    }
-            </dl>
-        </div>
+        <input class="aform-input aform-input--sm" type="date" @bind="filterFrom" />
+        <input class="aform-input aform-input--sm" type="date" @bind="filterTo" />
+        <button class="abtn abtn--outline" @onclick="LoadLogs">Search</button>
     </div>
-}
 
-@code {
-    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
-
-    private List<AuditDto> logs = [];
-    private AuditDto? selected;
-    private bool loading = true;
-    private int page = 1, totalPages = 1, total;
-    private const int PageSize = 50;
-    private string filterEvent = "";
-    private DateTime? filterFrom, filterTo;
-
-    protected override async Task OnInitializedAsync() => await LoadLogs();
-
-    private async Task LoadLogs()
+    @if (loading)
     {
-        loading = true;
-        var url = $"api/audit?page={page}&pageSize={PageSize}";
-        if (!string.IsNullOrEmpty(filterEvent)) url += $"&eventType={Uri.EscapeDataString(filterEvent)}";
-        if (filterFrom.HasValue) url += $"&dateFrom={filterFrom.Value:yyyy-MM-dd}";
-        if (filterTo.HasValue) url += $"&dateTo={filterTo.Value:yyyy-MM-dd}";
-
-        var result = await Api.CallApiAsync<PagedResult<AuditDto>>(url);
-        logs = result?.Items ?? [];
-        total = result?.Total ?? 0;
-        totalPages = total == 0 ? 1 : (int)Math.Ceiling(total / (double)PageSize);
-        loading = false;
+        <div class="atable-loading"><div class="atable-spinner"></div></div>
     }
-
-    private async Task PrevPage() { page--; await LoadLogs(); }
-    private async Task NextPage() { page++; await LoadLogs(); }
-
-    private static string BadgeClass(string eventType) => eventType switch
+    else if (logs.Count == 0)
     {
-        "LOGIN_SUCCESS"          => "bg-success",
-        "LOGIN_FAILED"           => "bg-danger",
-        "LOGOUT"                 => "bg-secondary",
-        "ACCESS_DENIED"          => "bg-warning text-dark",
-        "REGISTER"               => "bg-primary",
-        "EMAIL_CONFIRMED"        => "bg-success",
-        "PASSWORD_RESET"         => "bg-warning text-dark",
-        "PASSWORD_CHANGED"       => "bg-warning text-dark",
-        "PROFILE_UPDATED"        => "bg-info text-dark",
-        "USER_CREATED"           => "bg-primary",
-        "USER_DELETED"           => "bg-danger",
-        "USER_STATUS_CHANGED"    => "bg-warning text-dark",
-        "ROLE_CHANGED"           => "bg-info text-dark",
-        "POLICY_CHANGED"         => "bg-info text-dark",
-        "TENANT_CREATED"         => "bg-primary",
-        "TENANT_UPDATED"         => "bg-info text-dark",
-        "TENANT_STATUS_CHANGED"  => "bg-warning text-dark",
-        "PRODUCT_CREATED"        => "bg-primary",
-        "PRODUCT_UPDATED"        => "bg-info text-dark",
-        "PRODUCT_DELETED"        => "bg-danger",
-        _                        => "bg-secondary"
-    };
+        <div class="atable-empty">No audit events found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable atable--mono">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Event</th>
+                        <th>User</th>
+                        <th>Resource</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in logs)
+                    {
+                        <tr class="@(selected?.Id == e.Id ? "atable-row--selected" : "")"
+                            @onclick="() => selected = selected?.Id == e.Id ? null : e"
+                            style="cursor:pointer">
+                            <td class="atext-muted">@e.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            <td><span class="abadge @AuditBadgeClass(e.EventType)">@e.EventType</span></td>
+                            <td class="atext-truncate">@(e.UserId?.ToString()[..8] ?? "—")…</td>
+                            <td class="atext-muted">@e.ResourceType @e.ResourceId</td>
+                            <td class="atext-muted">@e.IpAddress</td>
+                        </tr>
+                        @if (selected?.Id == e.Id)
+                        {
+                            <tr class="atable-detail-row">
+                                <td colspan="5">
+                                    <div class="aevent-detail">
+                                        <div class="aevent-detail-grid">
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">ID</span><span>@e.Id</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Tenant</span><span>@(e.TenantId?.ToString() ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">User</span><span>@(e.UserId?.ToString() ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">IP</span><span>@(e.IpAddress ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Resource</span><span>@e.ResourceType / @e.ResourceId</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Timestamp</span><span>@e.Timestamp.ToString("o")</span></div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(e.OldValue))
+                                        {
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Old Value</span><code class="acode">@e.OldValue</code></div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(e.NewValue))
+                                        {
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">New Value</span><code class="acode">@e.NewValue</code></div>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
 
-    private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
-    private record AuditDto(Guid Id, Guid? TenantId, Guid? UserId, string EventType,
-        string? ResourceType, string? ResourceId, string? IpAddress, DateTime Timestamp,
-        string? OldValue, string? NewValue);
-}
+        <div class="apagination">
+            <button class="abtn-page" disabled="@(page <= 1)" @onclick="PrevPage">‹ Prev</button>
+            <span class="apagination-info">Page @(page) of @(totalPages)</span>
+            <button class="abtn-page" disabled="@(page >= totalPages)" @onclick="NextPage">Next ›</button>
+        </div>
+    }
+</div>
+
