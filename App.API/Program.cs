@@ -133,7 +133,10 @@ try
 
     builder.Services.AddSession();
     builder.Services.AddRazorPages();
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+            options.JsonSerializerOptions.Converters.Add(
+                new System.Text.Json.Serialization.JsonStringEnumConverter()));
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -237,7 +240,6 @@ try
     });
 
     builder.Services.AddScoped<IAuthService, AuthService>();
-    builder.Services.AddScoped<IProductService, ProductService>();
     builder.Services.AddScoped<AuditLogService>();
     builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
     builder.Services.AddScoped<PolicyEngine>();
@@ -257,31 +259,6 @@ try
     // Authorization Policies
     builder.Services.AddAuthorization(options =>
     {
-        // Product permissions — RBAC claim check + PBAC engine (PolicyRequirement)
-        options.AddPolicy("ProductCreate", policy =>
-        {
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductCreate, App.Domain.Constants.Permissions.AdminAll);
-            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "create"));
-        });
-
-        options.AddPolicy("ProductRead", policy =>
-        {
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductRead, App.Domain.Constants.Permissions.AdminAll);
-            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "read"));
-        });
-
-        options.AddPolicy("ProductUpdate", policy =>
-        {
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductUpdate, App.Domain.Constants.Permissions.AdminAll);
-            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "update"));
-        });
-
-        options.AddPolicy("ProductDelete", policy =>
-        {
-            policy.RequireClaim("permission", App.Domain.Constants.Permissions.ProductDelete, App.Domain.Constants.Permissions.AdminAll);
-            policy.AddRequirements(new App.Infrastructure.Authorization.PolicyRequirement("product", "delete"));
-        });
-
         // User permissions
         options.AddPolicy("UserRead", policy =>
             policy.RequireClaim("permission", App.Domain.Constants.Permissions.UserRead, App.Domain.Constants.Permissions.AdminAll));

@@ -1,20 +1,30 @@
 @inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="admin-shell">
+    <aside class="admin-sidebar">
         <AdminNavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <span class="text-muted">Admin Dashboard</span>
-            <a href="/api/auth/logout" class="ms-3">Logout</a>
-        </div>
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <span class="admin-topbar-title">Vaultex</span>
+            </div>
+            <div class="admin-topbar-right">
+                <a href="/" class="admin-topbar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    Home
+                </a>
+                <a href="/api/auth/logout" class="admin-topbar-logout">Sign out</a>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <main class="admin-content">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
 </div>
 
 <div id="blazor-error-ui">

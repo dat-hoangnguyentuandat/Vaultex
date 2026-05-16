@@ -18,6 +18,9 @@ namespace App.Infrastructure.Services
             _logger = logger;
         }
 
+        private static string? NormalizeIp(string? ip) =>
+            ip is "::1" or "::ffff:127.0.0.1" ? "127.0.0.1" : ip;
+
         public async Task LogAsync(
             string eventType,
             Guid? tenantId = null,
@@ -38,7 +41,7 @@ namespace App.Infrastructure.Services
                 ResourceId   = resourceId,
                 OldValue     = oldValue,
                 NewValue     = newValue,
-                IpAddress    = http?.Connection.RemoteIpAddress?.ToString(),
+                IpAddress    = NormalizeIp(http?.Connection.RemoteIpAddress?.ToString()),
                 UserAgent    = http?.Request.Headers["User-Agent"].ToString(),
                 Timestamp    = DateTime.UtcNow
             };

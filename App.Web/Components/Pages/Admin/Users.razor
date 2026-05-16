@@ -4,98 +4,131 @@
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-<PageTitle>User Management</PageTitle>
+<PageTitle>Users — Vaultex Admin</PageTitle>
 
-<h3>Users</h3>
-
-<div class="d-flex justify-content-between mb-3">
-    <input class="form-control w-25" placeholder="Search email or name..."
-           @bind="search" @bind:event="oninput" @onkeyup="LoadUsers" />
-    <button class="btn btn-primary" @onclick="() => showCreate = true">+ New User</button>
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Users</div>
+        <div class="apage-subtitle">Manage user accounts in this tenant</div>
+    </div>
+    <button class="abtn abtn--primary" @onclick="() => showCreate = true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New User
+    </button>
 </div>
 
-@if (loading)
-{
-    <p>Loading...</p>
-}
-else
-{
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Email</th>
-                <th>Full Name</th>
-                <th>Status</th>
-                <th>Last Login</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var u in users)
-            {
-                <tr>
-                    <td>@u.Email</td>
-                    <td>@u.FullName</td>
-                    <td>
-                        <span class="badge @(u.IsActive ? "bg-success" : "bg-secondary")">
-                            @(u.IsActive ? "Active" : "Inactive")
-                        </span>
-                    </td>
-                    <td>@(u.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-secondary me-1"
-                                @onclick="() => ToggleActive(u)">
-                            @(u.IsActive ? "Deactivate" : "Activate")
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary me-1"
-                                @onclick="() => OpenRoles(u)">Roles</button>
-                        <button class="btn btn-sm btn-outline-danger"
-                                @onclick="() => ConfirmDelete(u)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-
-    <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(page <= 1)" @onclick="PrevPage">‹ Prev</button>
-        <span>Page @(page) of @totalPages</span>
-        <button class="btn btn-sm btn-outline-secondary" disabled="@(page >= totalPages)" @onclick="NextPage">Next ›</button>
+<div class="acard">
+    <div class="acard-toolbar">
+        <div class="asearch-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="asearch-input" placeholder="Search email or name..."
+                   @bind="search" @bind:event="oninput" @onkeyup="LoadUsers" />
+        </div>
     </div>
-}
+
+    @if (loading)
+    {
+        <div class="atable-loading">
+            <div class="atable-spinner"></div>
+        </div>
+    }
+    else if (users.Count == 0)
+    {
+        <div class="atable-empty">No users found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in users)
+                    {
+                        <tr>
+                            <td>
+                                <div class="auser-cell">
+                                    <div class="auser-avatar">@GetInitials(u.FullName ?? u.Email)</div>
+                                    <div>
+                                        <div class="auser-name">@(u.FullName ?? "—")</div>
+                                        <div class="auser-email">@u.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="abadge @(u.IsActive ? "abadge--green" : "abadge--gray")">
+                                    @(u.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="atext-muted">@(u.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                            <td>
+                                <div class="arow-actions">
+                                    <button class="abtn-ghost" @onclick="() => ToggleActive(u)">
+                                        @(u.IsActive ? "Deactivate" : "Activate")
+                                    </button>
+                                    <button class="abtn-ghost" @onclick="() => OpenRoles(u)">Roles</button>
+                                    <button class="abtn-ghost abtn-ghost--danger" @onclick="() => ConfirmDelete(u)">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="apagination">
+            <button class="abtn-page" disabled="@(page <= 1)" @onclick="PrevPage">‹ Prev</button>
+            <span class="apagination-info">Page @(page) of @(totalPages)</span>
+            <button class="abtn-page" disabled="@(page >= totalPages)" @onclick="NextPage">Next ›</button>
+        </div>
+    }
+</div>
 
 @if (showCreate)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create User</h5>
-                    <button class="btn-close" @onclick="() => showCreate = false"></button>
+    <div class="amodal-overlay" @onclick="() => showCreate = false">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Create User</div>
+                <button class="amodal-close" @onclick="() => showCreate = false">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field">
+                    <label class="aform-label">Email</label>
+                    <input class="aform-input" @bind="newEmail" placeholder="user@example.com" />
                 </div>
-                <div class="modal-body">
-                    <div class="mb-2"><label>Email</label><input class="form-control" @bind="newEmail" /></div>
-                    <div class="mb-2"><label>Full Name</label><input class="form-control" @bind="newFullName" /></div>
-                    <div class="mb-2"><label>Password</label><input type="password" class="form-control" @bind="newPassword" /></div>
-                    <div class="mb-2">
-                        <label>Role</label>
-                        <select class="form-select" @bind="newRole">
-                            <option value="">— None —</option>
-                            @foreach (var r in availableRoles)
-                            {
-                                <option value="@r">@r</option>
-                            }
-                        </select>
-                    </div>
-                    @if (!string.IsNullOrEmpty(createError))
-                    {
-                        <div class="alert alert-danger">@createError</div>
-                    }
+                <div class="aform-field">
+                    <label class="aform-label">Full Name</label>
+                    <input class="aform-input" @bind="newFullName" placeholder="John Doe" />
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => showCreate = false">Cancel</button>
-                    <button class="btn btn-primary" @onclick="CreateUser">Create</button>
+                <div class="aform-field">
+                    <label class="aform-label">Password</label>
+                    <input class="aform-input" type="password" @bind="newPassword" placeholder="••••••••" />
                 </div>
+                <div class="aform-field">
+                    <label class="aform-label">Role</label>
+                    <select class="aform-input" @bind="newRole">
+                        <option value="">— None —</option>
+                        @foreach (var r in availableRoles)
+                        {
+                            <option value="@r">@r</option>
+                        }
+                    </select>
+                </div>
+                @if (!string.IsNullOrEmpty(createError))
+                {
+                    <div class="aform-error">@createError</div>
+                }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => showCreate = false">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="CreateUser">Create</button>
             </div>
         </div>
     </div>
@@ -103,28 +136,26 @@ else
 
 @if (rolesUser is not null)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Roles — @rolesUser.Email</h5>
-                    <button class="btn-close" @onclick="() => rolesUser = null"></button>
-                </div>
-                <div class="modal-body">
-                    @foreach (var r in availableRoles)
-                    {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox"
-                                   checked="@selectedRoles.Contains(r)"
-                                   @onchange="e => ToggleRole(r, (bool)e.Value!)" />
-                            <label class="form-check-label">@r</label>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => rolesUser = null">Cancel</button>
-                    <button class="btn btn-primary" @onclick="SaveRoles">Save</button>
-                </div>
+    <div class="amodal-overlay" @onclick="() => rolesUser = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Roles — @rolesUser.Email</div>
+                <button class="amodal-close" @onclick="() => rolesUser = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                @foreach (var r in availableRoles)
+                {
+                    <label class="acheck-label">
+                        <input type="checkbox" class="acheck-input"
+                               checked="@selectedRoles.Contains(r)"
+                               @onchange="e => ToggleRole(r, (bool)e.Value!)" />
+                        @r
+                    </label>
+                }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => rolesUser = null">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="SaveRoles">Save</button>
             </div>
         </div>
     </div>
@@ -132,126 +163,21 @@ else
 
 @if (deleteUser is not null)
 {
-    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.4)">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Delete User</h5>
-                    <button class="btn-close" @onclick="() => deleteUser = null"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to permanently delete <strong>@deleteUser.Email</strong>?</p>
-                    <p class="text-danger small">This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="() => deleteUser = null">Cancel</button>
-                    <button class="btn btn-danger" @onclick="DeleteUser">Delete</button>
-                </div>
+    <div class="amodal-overlay" @onclick="() => deleteUser = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Delete User</div>
+                <button class="amodal-close" @onclick="() => deleteUser = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                <p class="amodal-text">Are you sure you want to permanently delete <strong>@deleteUser.Email</strong>?</p>
+                <p class="amodal-text amodal-text--danger">This action cannot be undone.</p>
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => deleteUser = null">Cancel</button>
+                <button class="abtn abtn--danger" @onclick="DeleteUser">Delete</button>
             </div>
         </div>
     </div>
 }
 
-@code {
-    [Inject] private global::App.Web.Services.ApiClient Api { get; set; } = default!;
-
-    private List<UserDto> users = [];
-    private List<string> availableRoles = [];
-    private bool loading = true;
-    private string search = "";
-    private int page = 1, totalPages = 1;
-    private const int PageSize = 20;
-
-    private bool showCreate;
-    private string newEmail = "", newFullName = "", newPassword = "", newRole = "", createError = "";
-
-    private UserDto? rolesUser;
-    private HashSet<string> selectedRoles = [];
-    private UserDto? deleteUser;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadRoles();
-        await LoadUsers();
-    }
-
-    private async Task LoadUsers()
-    {
-        loading = true;
-        var result = await Api.CallApiAsync<PagedResult<UserDto>>(
-            $"api/admin/users?search={Uri.EscapeDataString(search)}&page={page}&pageSize={PageSize}");
-        users = result?.Items ?? [];
-        totalPages = result is null ? 1 : (int)Math.Ceiling(result.Total / (double)PageSize);
-        loading = false;
-    }
-
-    private async Task LoadRoles()
-    {
-        var roles = await Api.CallApiAsync<List<RoleDto>>("api/admin/roles");
-        availableRoles = roles?.Select(r => r.ShortName ?? "").Where(r => r != "").ToList() ?? [];
-    }
-
-    private async Task ToggleActive(UserDto u)
-    {
-        await Api.PutAsync($"api/admin/users/{u.Id}/activate?active={!u.IsActive}", new { });
-        await LoadUsers();
-    }
-
-    private async Task OpenRoles(UserDto u)
-    {
-        rolesUser = u;
-        var detail = await Api.CallApiAsync<UserDetail>($"api/admin/users/{u.Id}");
-        selectedRoles = detail?.Roles?.ToHashSet() ?? [];
-    }
-
-    private void ToggleRole(string role, bool add)
-    {
-        if (add) selectedRoles.Add(role);
-        else selectedRoles.Remove(role);
-    }
-
-    private async Task SaveRoles()
-    {
-        if (rolesUser is null) return;
-        await Api.PutAsync($"api/admin/users/{rolesUser.Id}/roles", new { Roles = selectedRoles.ToList() });
-        rolesUser = null;
-    }
-
-    private async Task CreateUser()
-    {
-        createError = "";
-        var resp = await Api.PostAsync("api/admin/users", new
-        {
-            Email = newEmail, Password = newPassword,
-            FullName = newFullName, Role = newRole
-        });
-        if (resp.IsSuccessStatusCode)
-        {
-            showCreate = false;
-            newEmail = newFullName = newPassword = newRole = "";
-            await LoadUsers();
-        }
-        else
-        {
-            createError = await resp.Content.ReadAsStringAsync();
-        }
-    }
-
-    private async Task PrevPage() { page--; await LoadUsers(); }
-    private async Task NextPage() { page++; await LoadUsers(); }
-
-    private void ConfirmDelete(UserDto u) => deleteUser = u;
-
-    private async Task DeleteUser()
-    {
-        if (deleteUser is null) return;
-        await Api.DeleteAsync($"api/admin/users/{deleteUser.Id}");
-        deleteUser = null;
-        await LoadUsers();
-    }
-
-    private record PagedResult<T>(int Total, int Page, int PageSize, List<T> Items);
-    private record UserDto(Guid Id, string Email, string? FullName, bool IsActive, DateTime? LastLoginAt);
-    private record UserDetail(Guid Id, string Email, string? FullName, bool IsActive, List<string> Roles);
-    private record RoleDto(Guid Id, string? ShortName);
-}

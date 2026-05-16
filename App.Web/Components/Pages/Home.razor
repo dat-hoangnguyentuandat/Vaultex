@@ -1,21 +1,88 @@
-﻿@page "/"
+@page "/"
+@layout CleanLayout
 @using Microsoft.AspNetCore.Components.Authorization
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Vaultex</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-        <h1>Xin chào, @context.User.Identity?.Name!</h1>
-        <p>Bạn đã đăng nhập thành công.</p>
+        <div class="home-wrapper">
+            <div class="home-header">
+                <div class="home-header-content">
+                    <div class="home-avatar">
+                        @GetInitials(context.User.Identity?.Name)
+                    </div>
+                    <div>
+                        <div class="home-greeting">Welcome back</div>
+                        <div class="home-username">@context.User.Identity?.Name</div>
+                    </div>
+                </div>
+            </div>
 
-        <a href="/products" class="btn btn-info">
-            Quản lý sản phẩm
-        </a>
+            <div class="home-cards">
+                <a href="/profile" class="home-card">
+                    <div class="home-card-icon home-card-icon--blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                        </svg>
+                    </div>
+                    <div class="home-card-body">
+                        <div class="home-card-title">My Profile</div>
+                        <div class="home-card-desc">Update your personal information and password</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </a>
 
-        <a href="api/auth/logout" class="btn btn-danger">Đăng xuất</a>
+                <AuthorizeView Roles="Admin,Manager,Employee,Viewer,PlatformAdmin" Context="adminCtx">
+                    <Authorized>
+                        <a href="/admin" class="home-card">
+                            <div class="home-card-icon home-card-icon--purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                                </svg>
+                            </div>
+                            <div class="home-card-body">
+                                <div class="home-card-title">Admin Dashboard</div>
+                                <div class="home-card-desc">Manage users, roles, policies and audit logs</div>
+                            </div>
+                            <div class="home-card-arrow">→</div>
+                        </a>
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+
+            <div class="home-footer-actions">
+                <a href="api/auth/logout" class="home-logout-btn">Sign out</a>
+            </div>
+        </div>
     </Authorized>
     <NotAuthorized>
-        <h1>Chào mừng đến Vaultex</h1>
-        <a href="api/auth/login" class="btn btn-primary">Đăng nhập</a>
+        <div class="home-landing">
+            <div class="home-landing-inner">
+                <div class="home-landing-logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <h1 class="home-landing-title">Vaultex</h1>
+                <p class="home-landing-subtitle">Identity & Access Management platform for modern teams</p>
+                <div class="home-landing-features">
+                    <div class="home-feature">
+                        <span class="home-feature-dot"></span>
+                        Multi-tenant architecture
+                    </div>
+                    <div class="home-feature">
+                        <span class="home-feature-dot"></span>
+                        Role-based access control
+                    </div>
+                    <div class="home-feature">
+                        <span class="home-feature-dot"></span>
+                        OpenID Connect / OAuth 2.0
+                    </div>
+                </div>
+                <a href="api/auth/login" class="home-login-btn">Sign in to your account</a>
+            </div>
+        </div>
     </NotAuthorized>
 </AuthorizeView>
+

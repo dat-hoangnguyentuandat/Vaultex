@@ -18,7 +18,6 @@ namespace App.Infrastructure.Data
 
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<TenantConfiguration> TenantConfigurations { get; set; }
-        public DbSet<Product> Products { get; set; }
         public DbSet<Policy> Policies { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
@@ -57,12 +56,6 @@ namespace App.Infrastructure.Data
 
             builder.Entity<AppRole>()
                 .HasQueryFilter(r => !_tenantContext!.IsResolved || r.TenantId == _tenantContext.TenantId);
-
-            builder.Entity<Product>()
-                .HasQueryFilter(p => !_tenantContext!.IsResolved || p.TenantId == _tenantContext.TenantId);
-
-            builder.Entity<Product>()
-                .HasIndex(p => p.TenantId);
 
             builder.Entity<Policy>(e =>
             {
