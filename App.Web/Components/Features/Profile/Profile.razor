@@ -1,0 +1,130 @@
+@page "/profile"
+@layout CleanLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>@I18n.T("profile.title") — Vaultex</PageTitle>
+
+@if (loading)
+{
+    <div class="profile-loading">
+        <div class="profile-spinner"></div>
+    </div>
+}
+else if (profile is not null)
+{
+    <div class="profile-wrapper">
+        <div class="profile-hero">
+            <div class="profile-avatar">@GetInitials(profile.FullName ?? profile.Email)</div>
+            <div class="profile-hero-info">
+                <div class="profile-hero-name">@(profile.FullName ?? "No name set")</div>
+                <div class="profile-hero-email">@profile.Email</div>
+                <div class="profile-hero-meta">
+                    Member since @profile.CreatedAt.ToString("MMM yyyy")
+                    @if (profile.LastLoginAt.HasValue)
+                    {
+                        <span class="profile-hero-sep">·</span>
+                        <span>Last login @profile.LastLoginAt.Value.ToString("MMM d, yyyy")</span>
+                    }
+                </div>
+            </div>
+            <div class="profile-hero-prefs">
+                <ThemeToggle />
+                <LangPicker />
+            </div>
+        </div>
+
+        <div class="profile-sections">
+            <div class="profile-section">
+                <div class="profile-section-header">
+                    <div class="profile-section-title">@I18n.T("profile.personalInfo")</div>
+                    <div class="profile-section-subtitle">@I18n.T("profile.personalInfoDesc")</div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(profileSuccess))
+                {
+                    <div class="profile-alert profile-alert--success">@profileSuccess</div>
+                }
+                @if (profileErrors.Count > 0)
+                {
+                    <div class="profile-alert profile-alert--error">
+                        @foreach (var e in profileErrors) { <div>@e</div> }
+                    </div>
+                }
+
+                <div class="profile-field-grid">
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.email")</label>
+                        <input class="profile-input profile-input--disabled" value="@profile.Email" disabled />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.fullName")</label>
+                        <input class="profile-input" @bind="editFullName" placeholder="Your full name" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.phone")</label>
+                        <input class="profile-input" @bind="editPhone" placeholder="+84 xxx xxx xxx" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.dob")</label>
+                        <input class="profile-input" type="date" @bind="editDob" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.company")</label>
+                        <input class="profile-input" @bind="editCompany" placeholder="Your company" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.position")</label>
+                        <input class="profile-input" @bind="editPosition" placeholder="Your role or title" />
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="profile-btn profile-btn--primary" @onclick="SaveProfile" disabled="@savingProfile">
+                        @(savingProfile ? I18n.T("common.saving") : I18n.T("profile.saveChanges"))
+                    </button>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <div class="profile-section-header">
+                    <div class="profile-section-title">@I18n.T("profile.changePassword")</div>
+                    <div class="profile-section-subtitle">@I18n.T("profile.changePasswordDesc")</div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(pwdSuccess))
+                {
+                    <div class="profile-alert profile-alert--success">@pwdSuccess</div>
+                }
+                @if (pwdErrors.Count > 0)
+                {
+                    <div class="profile-alert profile-alert--error">
+                        @foreach (var e in pwdErrors) { <div>@e</div> }
+                    </div>
+                }
+
+                <div class="profile-field-stack">
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.currentPassword")</label>
+                        <input class="profile-input" type="password" @bind="currentPassword" placeholder="••••••••" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.newPassword")</label>
+                        <input class="profile-input" type="password" @bind="newPassword" placeholder="••••••••" />
+                    </div>
+                    <div class="profile-field">
+                        <label class="profile-label">@I18n.T("profile.confirmPassword")</label>
+                        <input class="profile-input" type="password" @bind="confirmPassword" placeholder="••••••••" />
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="profile-btn profile-btn--secondary" @onclick="ChangePassword" disabled="@savingPwd">
+                        @(savingPwd ? I18n.T("common.saving") : I18n.T("profile.updatePassword"))
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

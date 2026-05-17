@@ -23,6 +23,9 @@ builder.Services.AddAuthentication(options =>
     options.ResponseType = "code";
     options.SaveTokens = true;
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters.NameClaimType = "name";
+    options.TokenValidationParameters.RoleClaimType = "role";
 
     // In Docker the browser-facing authority differs from the internal backchannel URL.
     // Set MetadataAddress to the internal service URL when running in a container.

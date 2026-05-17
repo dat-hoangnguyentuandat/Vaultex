@@ -13,9 +13,13 @@
                         @GetInitials(context.User.Identity?.Name)
                     </div>
                     <div>
-                        <div class="home-greeting">Welcome back</div>
+                        <div class="home-greeting">@I18n.T("home.welcome")</div>
                         <div class="home-username">@context.User.Identity?.Name</div>
                     </div>
+                </div>
+                <div class="home-header-actions">
+                    <ThemeToggle />
+                    <LangPicker />
                 </div>
             </div>
 
@@ -27,8 +31,8 @@
                         </svg>
                     </div>
                     <div class="home-card-body">
-                        <div class="home-card-title">My Profile</div>
-                        <div class="home-card-desc">Update your personal information and password</div>
+                        <div class="home-card-title">@I18n.T("nav.profile")</div>
+                        <div class="home-card-desc">@I18n.T("home.profileDesc")</div>
                     </div>
                     <div class="home-card-arrow">→</div>
                 </a>
@@ -42,8 +46,8 @@
                                 </svg>
                             </div>
                             <div class="home-card-body">
-                                <div class="home-card-title">Admin Dashboard</div>
-                                <div class="home-card-desc">Manage users, roles, policies and audit logs</div>
+                                <div class="home-card-title">@I18n.T("nav.admin")</div>
+                                <div class="home-card-desc">@I18n.T("home.adminDesc")</div>
                             </div>
                             <div class="home-card-arrow">→</div>
                         </a>
@@ -52,7 +56,7 @@
             </div>
 
             <div class="home-footer-actions">
-                <a href="api/auth/logout" class="home-logout-btn">Sign out</a>
+                <a href="api/auth/logout" class="home-logout-btn">@I18n.T("common.signOut")</a>
             </div>
         </div>
     </Authorized>
@@ -66,7 +70,7 @@
                         </svg>
                     </div>
                     <h1 class="google-landing-title">Vaultex</h1>
-                    <p class="google-landing-subtitle">Sign in to your account</p>
+                    <p class="google-landing-subtitle">@I18n.T("home.signIn")</p>
                 </div>
 
                 <div class="google-landing-actions">
@@ -76,15 +80,17 @@
                             <polyline points="10 17 15 12 10 7"/>
                             <line x1="15" y1="12" x2="3" y2="12"/>
                         </svg>
-                        Sign in to your account
+                        @I18n.T("home.signIn")
                     </a>
                 </div>
             </div>
 
             <div class="google-landing-footer">
-                <a href="#">Privacy</a>
-                <a href="#">Terms</a>
-                <a href="#">Help</a>
+                <LangPicker />
+                <ThemeToggle />
+                <a href="#">@I18n.T("footer.privacy")</a>
+                <a href="#">@I18n.T("footer.terms")</a>
+                <a href="#">@I18n.T("footer.help")</a>
             </div>
         </div>
     </NotAuthorized>

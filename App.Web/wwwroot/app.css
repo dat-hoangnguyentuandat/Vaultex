@@ -2,6 +2,25 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
 a, .btn-link {
     color: #006bb7;
 }
@@ -57,9 +76,9 @@ h1:focus {
 .home-wrapper {
     min-height: 100vh;
     background: #f8fafc;
-    padding: 2rem 1.5rem;
-    max-width: 720px;
-    margin: 0 auto;
+    padding: 2.5rem 4rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .home-header {
@@ -103,9 +122,9 @@ h1:focus {
 }
 
 .home-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
     margin-bottom: 1.5rem;
 }
 
@@ -191,96 +210,6 @@ h1:focus {
     text-decoration: none;
 }
 
-.home-landing {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-    padding: 2rem;
-}
-
-.home-landing-inner {
-    text-align: center;
-    max-width: 480px;
-}
-
-.home-landing-logo {
-    width: 72px;
-    height: 72px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1.5rem;
-    box-shadow: 0 8px 32px rgba(99,102,241,0.4);
-}
-
-.home-landing-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.5px;
-}
-
-.home-landing-subtitle {
-    font-size: 1rem;
-    color: #94a3b8;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-}
-
-.home-landing-features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 2.5rem;
-    text-align: left;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 1.25rem 1.5rem;
-}
-
-.home-feature {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-    color: #cbd5e1;
-}
-
-.home-feature-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #6366f1;
-    flex-shrink: 0;
-}
-
-.home-login-btn {
-    display: inline-block;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    font-weight: 600;
-    font-size: 0.95rem;
-    padding: 0.875rem 2rem;
-    border-radius: 10px;
-    text-decoration: none;
-    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
-    box-shadow: 0 4px 16px rgba(99,102,241,0.4);
-}
-
-.home-login-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(99,102,241,0.5);
-    text-decoration: none;
-    color: white;
-}
-
 /* =====================================================
    PROFILE PAGE
    ===================================================== */
@@ -306,9 +235,9 @@ h1:focus {
 }
 
 .profile-wrapper {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
+    width: 100%;
+    padding: 2.5rem 4rem;
+    box-sizing: border-box;
 }
 
 .profile-hero {
@@ -362,9 +291,10 @@ h1:focus {
 }
 
 .profile-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
 }
 
 .profile-section {
@@ -395,7 +325,7 @@ h1:focus {
 .profile-field-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 1.25rem;
     margin-bottom: 1.25rem;
 }
 
@@ -496,6 +426,12 @@ h1:focus {
     color: #991b1b;
 }
 
+@media (max-width: 1024px) {
+    .profile-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 640px) {
     .profile-field-grid {
         grid-template-columns: 1fr;
@@ -508,6 +444,15 @@ h1:focus {
 
     .profile-hero-meta {
         justify-content: center;
+    }
+
+    .home-wrapper,
+    .profile-wrapper {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .home-cards {
+        grid-template-columns: 1fr;
     }
 }
 
