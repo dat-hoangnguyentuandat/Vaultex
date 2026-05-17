@@ -1,0 +1,102 @@
+/* =====================================================
+   HOME PAGE — Google-style landing (unauthenticated)
+   ===================================================== */
+
+.google-landing {
+    min-height: 100vh;
+    background-color: #f1f3f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 64px 16px 0;
+    font-family: 'Roboto', Arial, sans-serif;
+}
+
+.google-landing-card {
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 48px 40px 36px;
+    width: 100%;
+    max-width: 450px;
+    box-sizing: border-box;
+}
+
+.google-landing-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.google-landing-logo {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.google-landing-title {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #202124;
+    margin: 0 0 8px;
+    letter-spacing: 0;
+}
+
+.google-landing-subtitle {
+    font-size: 1rem;
+    color: #5f6368;
+    margin: 0;
+    font-weight: 400;
+}
+
+.google-landing-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.google-signin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #fff;
+    background: #1a73e8;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.google-signin-btn:hover {
+    background: #1765cc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    color: #fff;
+}
+
+.google-landing-footer {
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 0 24px;
+    margin-top: auto;
+    flex-wrap: wrap;
+}
+
+.google-landing-footer a {
+    font-size: 0.8125rem;
+    color: #5f6368;
+    text-decoration: none;
+}
+
+.google-landing-footer a:hover {
+    text-decoration: underline;
+}

@@ -3,7 +3,6 @@
    ===================================================== */
 
 /* ----- Blazor validation class overrides (for auth-input) ----- */
-/* Blazor adds .invalid on InputText when field is invalid after submit */
 .auth-input.invalid,
 .auth-input.modified.invalid {
     border-color: #e53e3e !important;
@@ -11,11 +10,10 @@
 }
 .auth-input.valid,
 .auth-input.modified.valid {
-    border-color: #d1d5db;   /* keep neutral — don't show green on valid */
+    border-color: #d1d5db;
     box-shadow: none;
     outline: none;
 }
-/* Blazor ValidationMessage renders as <div class="validation-message"> */
 .validation-message {
     font-size: 0.78rem;
     color: #e53e3e;
@@ -37,7 +35,6 @@
     overflow: hidden;
 }
 
-/* dot-grid decorative corners */
 .auth-page::before {
     content: '';
     position: absolute;
@@ -106,7 +103,7 @@
     margin-bottom: 28px;
 }
 
-/* ----- Description text (forgot password instruction) ----- */
+/* ----- Description text ----- */
 .auth-description {
     font-size: 0.88rem;
     color: #6b7280;
@@ -114,7 +111,7 @@
     line-height: 1.55;
 }
 
-/* ----- Inline link button (Gửi lại mã) ----- */
+/* ----- Inline link button ----- */
 .btn-link-inline {
     background: none;
     border: none;
@@ -391,7 +388,7 @@
     to { transform: rotate(360deg); }
 }
 
-/* ----- Alert banner (sai credentials / lockout) ----- */
+/* ----- Alert banner ----- */
 .auth-alert-error {
     display: flex;
     align-items: flex-start;
@@ -460,7 +457,7 @@
     text-decoration: underline;
 }
 
-/* ----- Login footer (2 columns: Đăng ký + Liên hệ hỗ trợ) ----- */
+/* ----- Login footer ----- */
 .auth-login-footer {
     display: flex;
     align-items: center;
@@ -480,4 +477,3 @@
 .auth-support-link:hover {
     text-decoration: underline;
 }
-
