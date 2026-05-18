@@ -25,6 +25,11 @@ namespace App.Infrastructure.Configuration
         public string ClientId { get; set; } = string.Empty;
         public string? ClientSecret { get; set; }
         public string DisplayName { get; set; } = string.Empty;
+        /// <summary>
+        /// OpenIddict consent type: "implicit" (auto-approve, first-party), "explicit" (show consent screen, third-party).
+        /// Defaults to "implicit".
+        /// </summary>
+        public string ConsentType { get; set; } = "implicit";
         public List<string> RedirectUris { get; set; } = new();
         public List<string> PostLogoutRedirectUris { get; set; } = new();
         public List<string> Permissions { get; set; } = new();

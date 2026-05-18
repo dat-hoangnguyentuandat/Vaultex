@@ -116,11 +116,6 @@ public class AuthorizationController : ControllerBase
         return identity;
     }
 
-    // Được gọi sau khi Login.cshtml.cs xác thực thành công và redirect về đây.
-    // Tạo authorization_code (mã ủy quyền tạm thời, sống 5 phút, dùng 1 lần)
-    // rồi redirect về App.Web kèm code trong URL:
-    //   https://localhost:7066/signin-oidc?code=<authorization_code>
-    // App.Web sẽ nhận code này và gọi Exchange() bên dưới để đổi lấy token thật.
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     [IgnoreAntiforgeryToken]
@@ -162,6 +157,30 @@ public class AuthorizationController : ControllerBase
             scopes: request.GetScopes()))
         {
             authorizationList.Add(item);
+        }
+
+        // For explicit-consent clients (third-party apps), show consent screen unless
+        // the user has already granted permanent authorization for these scopes.
+        var consentType = await _applicationManager.GetConsentTypeAsync(application);
+        if (consentType == ConsentTypes.Explicit && authorizationList.Count == 0)
+        {
+            var consent = Request.HasFormContentType
+                ? Request.Form["consent"].FirstOrDefault()
+                : null;
+
+            if (consent == "deny")
+                return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+            if (consent != "allow")
+            {
+                // Redirect to consent page, carrying all original OIDC params as query string.
+                var qs = Request.HasFormContentType
+                    ? QueryString.Create(Request.Form
+                        .Where(f => f.Key != "consent")
+                        .Select(f => new KeyValuePair<string, string?>(f.Key, f.Value.ToString())))
+                    : Request.QueryString;
+                return Redirect("/connect/consent" + qs);
+            }
         }
 
         var identity = await BuildIdentityAsync(user);
