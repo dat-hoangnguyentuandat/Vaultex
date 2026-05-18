@@ -97,25 +97,56 @@ try
             }
             else
             {
+                // Production cert handling, in priority order:
+                //   1. Operator-supplied PFX paths (OpenIddict:Certificates:*)
+                //      — use this when running multi-instance behind a load balancer,
+                //        or when certs come from a secrets manager / mounted volume.
+                //   2. Auto-provisioned self-signed PFX persisted to disk.
+                //      — first run generates 5-year RSA-2048 certs; subsequent runs reuse.
+                //
+                // Ephemeral keys are NEVER used in production (they invalidate all tokens
+                // on every restart, breaking active user sessions).
                 var encryptionCertPath = builder.Configuration["OpenIddict:Certificates:EncryptionCertPath"];
                 var signingCertPath = builder.Configuration["OpenIddict:Certificates:SigningCertPath"];
                 var certPassword = builder.Configuration["OpenIddict:Certificates:Password"] ?? "";
 
-                if (!string.IsNullOrEmpty(encryptionCertPath) && !string.IsNullOrEmpty(signingCertPath))
+                if (string.IsNullOrEmpty(encryptionCertPath) || string.IsNullOrEmpty(signingCertPath))
                 {
-                    options.AddEncryptionCertificate(
-                        new System.Security.Cryptography.X509Certificates.X509Certificate2(
-                            encryptionCertPath, certPassword));
-                    options.AddSigningCertificate(
-                        new System.Security.Cryptography.X509Certificates.X509Certificate2(
-                            signingCertPath, certPassword));
+                    // Fall back to auto-provisioning under content root.
+                    var certDir = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "certs");
+                    encryptionCertPath ??= Path.Combine(certDir, "encryption.pfx");
+                    signingCertPath ??= Path.Combine(certDir, "signing.pfx");
+
+                    if (string.IsNullOrEmpty(certPassword))
+                    {
+                        // Persist the generated password alongside the certs so they remain readable
+                        // across restarts. Only used when operator hasn't provided an explicit password.
+                        var passwordPath = Path.Combine(certDir, ".cert-password");
+                        if (File.Exists(passwordPath))
+                        {
+                            certPassword = File.ReadAllText(passwordPath).Trim();
+                        }
+                        else
+                        {
+                            certPassword = Convert.ToBase64String(
+                                System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+                            Directory.CreateDirectory(certDir);
+                            File.WriteAllText(passwordPath, certPassword);
+                            if (!OperatingSystem.IsWindows())
+                            {
+                                try { File.SetUnixFileMode(passwordPath, UnixFileMode.UserRead | UnixFileMode.UserWrite); }
+                                catch { }
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    // Fallback: ephemeral keys — tokens won't survive restarts, but app won't crash
-                    options.AddEphemeralEncryptionKey()
-                           .AddEphemeralSigningKey();
-                }
+
+                options.AddEncryptionCertificate(
+                    OpenIddictCertificateProvisioner.GetOrCreateEncryptionCertificate(
+                        encryptionCertPath, certPassword));
+                options.AddSigningCertificate(
+                    OpenIddictCertificateProvisioner.GetOrCreateSigningCertificate(
+                        signingCertPath, certPassword));
             }
 
             options.UseAspNetCore()
