@@ -39,5 +39,8 @@ namespace App.Domain.Entities
         public const string ProductCreated  = "PRODUCT_CREATED";
         public const string ProductUpdated  = "PRODUCT_UPDATED";
         public const string ProductDeleted  = "PRODUCT_DELETED";
+        public const string OidcClientCreated = "OIDC_CLIENT_CREATED";
+        public const string OidcClientUpdated = "OIDC_CLIENT_UPDATED";
+        public const string OidcClientDeleted = "OIDC_CLIENT_DELETED";
     }
 }

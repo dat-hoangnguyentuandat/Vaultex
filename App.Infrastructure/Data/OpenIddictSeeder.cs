@@ -37,6 +37,7 @@ namespace App.Infrastructure.Data
                     ClientId = appSettings.ClientId,
                     ClientSecret = appSettings.ClientSecret,
                     DisplayName = appSettings.DisplayName,
+                    ConsentType = appSettings.ConsentType,
                 };
 
                 foreach (var uri in appSettings.RedirectUris)
