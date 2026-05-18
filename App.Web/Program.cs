@@ -45,6 +45,8 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<App.Web.Services.ApiClient>();
+builder.Services.AddScoped<App.Web.Services.ThemeService>();
+builder.Services.AddScoped<App.Web.Services.I18nService>();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddHttpClient("api", client =>

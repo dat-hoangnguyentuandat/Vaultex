@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Components;
 using App.Web.Services;
 
-namespace App.Web.Components.Pages;
+namespace App.Web.Components.Features.Profile;
 
 public partial class Profile : ComponentBase
 {
     [Inject] private ApiClient Api { get; set; } = default!;
+    [Inject] private I18nService I18n { get; set; } = default!;
+    [Inject] private ThemeService Theme { get; set; } = default!;
 
     private ProfileDto? profile;
     private bool loading = true;

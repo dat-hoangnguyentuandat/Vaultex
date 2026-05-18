@@ -10,42 +10,39 @@
 </div>
 
 <div class="auth-card">
-    <h1 class="auth-card-title">XÁC NHẬN EMAIL</h1>
+    <h1 class="auth-card-title" data-i18n="confirm.title">XÁC NHẬN EMAIL</h1>
 
     @if (Model.InvalidLink)
     {
         <div class="auth-alert-error">
             <span class="auth-alert-icon">⚠</span>
-            <span class="auth-alert-text">Link không hợp lệ hoặc đã hết hạn.</span>
+            <span class="auth-alert-text" data-i18n="confirm.invalid">Link không hợp lệ hoặc đã hết hạn.</span>
         </div>
         <div style="margin-top: 24px;">
-            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
-                Về trang đăng nhập
-            </a>
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;"
+               data-i18n="confirm.back">Về trang đăng nhập</a>
         </div>
     }
     else if (Model.ShowSuccess)
     {
         <div class="auth-alert-success">
             <span class="auth-alert-icon">✓</span>
-            <span class="auth-alert-text">Email đã được xác nhận thành công. Bạn có thể đăng nhập ngay.</span>
+            <span class="auth-alert-text" data-i18n="confirm.success">Email đã được xác nhận thành công. Bạn có thể đăng nhập ngay.</span>
         </div>
         <div style="margin-top: 24px;">
-            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
-                Đăng nhập
-            </a>
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;"
+               data-i18n="confirm.login">Đăng nhập</a>
         </div>
     }
     else if (Model.AlreadyConfirmed)
     {
         <div class="auth-alert-success">
             <span class="auth-alert-icon">✓</span>
-            <span class="auth-alert-text">Email này đã được xác nhận trước đó.</span>
+            <span class="auth-alert-text" data-i18n="confirm.already">Email này đã được xác nhận trước đó.</span>
         </div>
         <div style="margin-top: 24px;">
-            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
-                Đăng nhập
-            </a>
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;"
+               data-i18n="confirm.login">Đăng nhập</a>
         </div>
     }
 </div>
