@@ -169,7 +169,12 @@ public class AuthorizationController : ControllerBase
                 : null;
 
             if (consent == "deny")
+            {
+                await _auditLog.LogAsync(AuditEventTypes.ConsentDenied, user.TenantId, user.Id,
+                    resourceType: "OidcClient", resourceId: request.ClientId,
+                    newValue: string.Join(" ", request.GetScopes()));
                 return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
 
             if (consent != "allow")
             {
@@ -196,12 +201,23 @@ public class AuthorizationController : ControllerBase
         identity.SetResources(resources);
 
         var authorization = authorizationList.LastOrDefault();
+        var isNewGrant = authorization is null;
         authorization ??= await _authorizationManager.CreateAsync(
             identity: identity,
             subject: await _userManager.GetUserIdAsync(user),
             client: (await _applicationManager.GetIdAsync(application))!,
             type: AuthorizationTypes.Permanent,
             scopes: identity.GetScopes());
+
+        if (isNewGrant && consentType == ConsentTypes.Explicit)
+        {
+            await _auditLog.LogAsync(AuditEventTypes.ConsentGranted, user.TenantId, user.Id,
+                resourceType: "OidcClient", resourceId: request.ClientId,
+                newValue: string.Join(" ", request.GetScopes()));
+        }
+
+        await _auditLog.LogAsync(AuditEventTypes.TokenIssued, user.TenantId, user.Id,
+            resourceType: "OidcClient", resourceId: request.ClientId);
 
         identity.SetAuthorizationId(await _authorizationManager.GetIdAsync(authorization));
         identity.SetDestinations(GetDestinations);
