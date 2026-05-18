@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using App.Web.Services;
 
-namespace App.Web.Components.Pages.Admin;
+namespace App.Web.Components.Features.Admin;
 
 public partial class AuditLog : ComponentBase
 {

@@ -1,5 +1,50 @@
+:root {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-surface: #f1f5f9;
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --sidebar-bg: #0f172a;
+    --topbar-bg: #ffffff;
+    --topbar-border: #e2e8f0;
+    --modal-bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-disabled-bg: #f8fafc;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+    --bg-page: #0f172a;
+    --bg-card: #1e293b;
+    --bg-surface: #0f172a;
+    --border: #334155;
+    --border-subtle: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #818cf8;
+    --accent-hover: #6366f1;
+    --sidebar-bg: #020617;
+    --topbar-bg: #1e293b;
+    --topbar-border: #334155;
+    --modal-bg: #1e293b;
+    --input-bg: #0f172a;
+    --input-disabled-bg: #1e293b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    transition: background 0.2s, color 0.2s;
 }
 
 #blazor-error-ui {
@@ -70,12 +115,74 @@ h1:focus {
 }
 
 /* =====================================================
+   THEME TOGGLE + LANG PICKER
+   ===================================================== */
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border-color: var(--accent);
+}
+
+.lang-picker {
+    display: inline-flex;
+    align-items: center;
+}
+
+.lang-select {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.lang-select:hover, .lang-select:focus {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.home-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.profile-hero-prefs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+/* =====================================================
    HOME PAGE
    ===================================================== */
 
 .home-wrapper {
     min-height: 100vh;
-    background: #f8fafc;
+    background: var(--bg-page);
     padding: 2.5rem 4rem;
     width: 100%;
     box-sizing: border-box;
@@ -132,8 +239,8 @@ h1:focus {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
     text-decoration: none;
@@ -176,17 +283,17 @@ h1:focus {
 .home-card-title {
     font-weight: 600;
     font-size: 0.95rem;
-    color: #1e293b;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .home-card-desc {
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .home-card-arrow {
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 1.1rem;
 }
 
@@ -224,7 +331,7 @@ h1:focus {
 .profile-spinner {
     width: 36px;
     height: 36px;
-    border: 3px solid #e2e8f0;
+    border: 3px solid var(--border);
     border-top-color: #6366f1;
     border-radius: 50%;
     animation: profile-spin 0.7s linear infinite;
@@ -238,6 +345,7 @@ h1:focus {
     width: 100%;
     padding: 2.5rem 4rem;
     box-sizing: border-box;
+    background: var(--bg-page);
 }
 
 .profile-hero {
@@ -298,8 +406,8 @@ h1:focus {
 }
 
 .profile-section {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.75rem;
 }
@@ -307,19 +415,19 @@ h1:focus {
 .profile-section-header {
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .profile-section-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .profile-section-subtitle {
     font-size: 0.82rem;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .profile-field-grid {
@@ -345,16 +453,16 @@ h1:focus {
 .profile-label {
     font-size: 0.82rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-secondary);
 }
 
 .profile-input {
     padding: 0.625rem 0.875rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.9rem;
-    color: #1e293b;
-    background: white;
+    color: var(--text-primary);
+    background: var(--input-bg);
     transition: border-color 0.15s, box-shadow 0.15s;
     outline: none;
     width: 100%;
@@ -367,8 +475,8 @@ h1:focus {
 }
 
 .profile-input--disabled {
-    background: #f8fafc;
-    color: #94a3b8;
+    background: var(--input-disabled-bg);
+    color: var(--text-muted);
     cursor: not-allowed;
 }
 
@@ -463,14 +571,14 @@ h1:focus {
 .admin-shell {
     display: flex;
     min-height: 100vh;
-    background: #f1f5f9;
+    background: var(--bg-surface);
 }
 
 /* Sidebar */
 .admin-sidebar {
     width: 240px;
     flex-shrink: 0;
-    background: #0f172a;
+    background: var(--sidebar-bg);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -493,8 +601,8 @@ h1:focus {
 /* Top bar */
 .admin-topbar {
     height: 56px;
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--topbar-bg);
+    border-bottom: 1px solid var(--topbar-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -513,7 +621,7 @@ h1:focus {
 .admin-topbar-title {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .admin-topbar-right {
@@ -527,7 +635,7 @@ h1:focus {
     align-items: center;
     gap: 0.375rem;
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--text-secondary);
     text-decoration: none;
     padding: 0.375rem 0.75rem;
     border-radius: 6px;
@@ -535,14 +643,14 @@ h1:focus {
 }
 
 .admin-topbar-link:hover {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: var(--bg-surface);
+    color: var(--text-primary);
     text-decoration: none;
 }
 
 .admin-topbar-logout {
     font-size: 0.82rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     text-decoration: none;
     padding: 0.375rem 0.75rem;
     border-radius: 6px;
@@ -654,13 +762,13 @@ h1:focus {
 .dash-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .dash-subtitle {
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .dash-stats {
@@ -673,8 +781,8 @@ h1:focus {
     display: flex;
     align-items: center;
     gap: 1rem;
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     text-decoration: none;
@@ -712,18 +820,18 @@ h1:focus {
 .dash-stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
     line-height: 1;
     margin-bottom: 4px;
 }
 
 .dash-stat-label {
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .dash-stat-arrow {
-    color: #cbd5e1;
+    color: var(--text-muted);
     font-size: 1rem;
 }
 
@@ -777,19 +885,19 @@ h1:focus {
 .apage-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
 .apage-subtitle {
     font-size: 0.875rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 /* Card */
 .acard {
-    background: white;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -799,7 +907,7 @@ h1:focus {
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .acard-toolbar--wrap {
@@ -811,13 +919,13 @@ h1:focus {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
     flex: 1;
     min-width: 200px;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .asearch-input {
@@ -825,12 +933,12 @@ h1:focus {
     background: transparent;
     outline: none;
     font-size: 0.875rem;
-    color: #1e293b;
+    color: var(--text-primary);
     width: 100%;
 }
 
 .asearch-input::placeholder {
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 /* Table */
@@ -851,16 +959,16 @@ h1:focus {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
     white-space: nowrap;
 }
 
 .atable tbody td {
     padding: 0.875rem 1.25rem;
-    border-bottom: 1px solid #f1f5f9;
-    color: #1e293b;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
     vertical-align: middle;
 }
 
@@ -869,7 +977,7 @@ h1:focus {
 }
 
 .atable tbody tr:hover td {
-    background: #f8fafc;
+    background: var(--bg-surface);
 }
 
 .atable--mono {
@@ -882,7 +990,7 @@ h1:focus {
 }
 
 .atable-detail-row td {
-    background: #f8fafc;
+    background: var(--bg-surface);
     padding: 0;
 }
 
@@ -895,7 +1003,7 @@ h1:focus {
 .atable-spinner {
     width: 32px;
     height: 32px;
-    border: 3px solid #e2e8f0;
+    border: 3px solid var(--border);
     border-top-color: #6366f1;
     border-radius: 50%;
     animation: atable-spin 0.7s linear infinite;
@@ -908,7 +1016,7 @@ h1:focus {
 .atable-empty {
     text-align: center;
     padding: 3rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.875rem;
 }
 
@@ -935,13 +1043,13 @@ h1:focus {
 
 .auser-name {
     font-weight: 500;
-    color: #1e293b;
+    color: var(--text-primary);
     font-size: 0.875rem;
 }
 
 .auser-email {
     font-size: 0.78rem;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 /* Row actions */
@@ -959,21 +1067,21 @@ h1:focus {
     justify-content: center;
     gap: 0.75rem;
     padding: 1rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-subtle);
 }
 
 .apagination-info {
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--text-secondary);
 }
 
 .abtn-page {
     padding: 0.375rem 0.875rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 6px;
-    background: white;
+    background: var(--bg-card);
     font-size: 0.82rem;
-    color: #475569;
+    color: var(--text-secondary);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
@@ -1040,9 +1148,9 @@ h1:focus {
     border-radius: 6px;
     font-size: 0.78rem;
     font-weight: 500;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #475569;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     white-space: nowrap;
@@ -1067,7 +1175,7 @@ h1:focus {
 }
 
 .amodal {
-    background: white;
+    background: var(--modal-bg);
     border-radius: 14px;
     width: 100%;
     max-width: 440px;
@@ -1085,13 +1193,13 @@ h1:focus {
     align-items: center;
     justify-content: space-between;
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
 .amodal-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .amodal-close {
@@ -1121,7 +1229,7 @@ h1:focus {
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--border-subtle);
 }
 
 .amodal-text { font-size: 0.875rem; color: #475569; margin: 0; }
@@ -1145,16 +1253,16 @@ h1:focus {
 .aform-label {
     font-size: 0.8rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-secondary);
 }
 
 .aform-input {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.875rem;
-    color: #1e293b;
-    background: white;
+    color: var(--text-primary);
+    background: var(--input-bg);
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     width: 100%;
@@ -1170,7 +1278,7 @@ h1:focus {
 
 .aform-textarea { resize: vertical; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; }
 
-.aform-hint { font-size: 0.75rem; color: #94a3b8; }
+.aform-hint { font-size: 0.75rem; color: var(--text-muted); }
 
 .aform-error {
     background: #fef2f2;
@@ -1187,7 +1295,7 @@ h1:focus {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: #475569;
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 0.375rem 0;
 }
@@ -1201,10 +1309,10 @@ h1:focus {
 }
 
 /* Misc */
-.atext-muted    { color: #94a3b8; font-size: 0.82rem; }
+.atext-muted    { color: var(--text-muted); font-size: 0.82rem; }
 .atext-truncate { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .afont-medium   { font-weight: 500; }
-.acode          { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; color: #475569; }
+.acode          { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; background: var(--bg-surface); padding: 0.1rem 0.4rem; border-radius: 4px; color: var(--text-secondary); }
 
 /* Audit event detail */
 .aevent-detail {

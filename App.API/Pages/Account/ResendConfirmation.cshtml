@@ -10,26 +10,25 @@
 </div>
 
 <div class="auth-card">
-    <h1 class="auth-card-title">GỬI LẠI XÁC NHẬN</h1>
+    <h1 class="auth-card-title" data-i18n="resend.title">GỬI LẠI XÁC NHẬN</h1>
 
     @if (Model.EmailSent)
     {
         <div class="auth-alert-success">
             <span class="auth-alert-icon">✓</span>
-            <span class="auth-alert-text">
+            <span class="auth-alert-text" data-i18n="resend.sent">
                 Nếu email tồn tại và chưa xác nhận, link xác nhận đã được gửi lại.
                 Vui lòng kiểm tra hộp thư.
             </span>
         </div>
         <div style="margin-top: 24px;">
-            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;">
-                Quay lại đăng nhập
-            </a>
+            <a href="/account/login" class="btn-auth-primary" style="display:block;text-align:center;"
+               data-i18n="resend.login">Quay lại đăng nhập</a>
         </div>
     }
     else
     {
-        <p style="color:#888;margin-bottom:24px;font-size:0.95em;">
+        <p class="auth-desc-p" data-i18n="resend.description">
             Nhập email đăng ký để nhận lại link xác nhận tài khoản.
         </p>
 
@@ -39,18 +38,21 @@
             </div>
 
             <div class="auth-field">
-                <label asp-for="Input.Email">Email <span class="required-star">*</span></label>
-                <input asp-for="Input.Email" class="auth-input" placeholder="Nhập email của bạn" type="email" />
+                <label asp-for="Input.Email" data-i18n="resend.email">Email <span class="required-star">*</span></label>
+                <input asp-for="Input.Email" class="auth-input"
+                       placeholder="Nhập email của bạn"
+                       data-i18n-placeholder="resend.email.placeholder"
+                       type="email" />
                 <span asp-validation-for="Input.Email" class="auth-error-msg"></span>
             </div>
 
             <div style="margin-top: 24px;">
-                <button type="submit" class="btn-auth-primary">Gửi lại link xác nhận</button>
+                <button type="submit" class="btn-auth-primary" data-i18n="resend.submit">Gửi lại link xác nhận</button>
             </div>
         </form>
         <div class="auth-login-footer">
             <div class="auth-footer-link">
-                <a href="/account/login">← Quay lại đăng nhập</a>
+                <a href="/account/login" data-i18n="resend.back">← Quay lại đăng nhập</a>
             </div>
         </div>
     }

@@ -1,4 +1,7 @@
 @inherits LayoutComponentBase
+@inject ThemeService Theme
+@inject I18nService I18n
+@implements IDisposable
 
 <div class="admin-shell">
     <aside class="admin-sidebar">
@@ -11,13 +14,15 @@
                 <span class="admin-topbar-title">Vaultex</span>
             </div>
             <div class="admin-topbar-right">
+                <ThemeToggle />
+                <LangPicker />
                 <a href="/" class="admin-topbar-link">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                     </svg>
-                    Home
+                    @I18n.T("nav.home")
                 </a>
-                <a href="/api/auth/logout" class="admin-topbar-logout">Sign out</a>
+                <a href="/api/auth/logout" class="admin-topbar-logout">@I18n.T("common.signOut")</a>
             </div>
         </header>
 
@@ -32,3 +37,27 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.OnChange += StateHasChanged;
+        I18n.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitAsync();
+            await I18n.InitAsync();
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Theme.OnChange -= StateHasChanged;
+        I18n.OnChange -= StateHasChanged;
+    }
+}

@@ -1,0 +1,22 @@
+@inject I18nService I18n
+@implements IDisposable
+
+<div class="lang-picker">
+    <select class="lang-select" value="@I18n.CurrentLang" @onchange="OnChange">
+        <option value="en">EN</option>
+        <option value="vi">VI</option>
+        <option value="zh">ZH</option>
+        <option value="ja">JA</option>
+    </select>
+</div>
+
+@code {
+    protected override void OnInitialized() => I18n.OnChange += StateHasChanged;
+    public void Dispose() => I18n.OnChange -= StateHasChanged;
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        var lang = e.Value?.ToString() ?? "en";
+        await I18n.SetLanguageAsync(lang);
+    }
+}
