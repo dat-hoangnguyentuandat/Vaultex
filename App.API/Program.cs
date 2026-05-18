@@ -72,7 +72,7 @@ try
             options.SetTokenEndpointUris("/connect/token")
                    .SetAuthorizationEndpointUris("/connect/authorize")
                    .SetEndSessionEndpointUris("/connect/logout")
-                   .SetIntrospectionEndpointUris("/connect/introspect")
+                   .SetUserInfoEndpointUris("/connect/userinfo")
                    .SetJsonWebKeySetEndpointUris("/connect/jwks")
                    .SetConfigurationEndpointUris("/.well-known/openid-configuration");
 
@@ -84,6 +84,11 @@ try
                    .AllowClientCredentialsFlow();
 
             options.RequireProofKeyForCodeExchange();
+
+            // Access tokens are signed JWTs (JWS) only — third parties verify via JWKS.
+            // Encryption (JWE) is unnecessary for tokens consumed by external apps and
+            // would require sharing the encryption private key, which is not standard OIDC.
+            options.DisableAccessTokenEncryption();
 
             if (builder.Environment.IsDevelopment())
             {
@@ -116,6 +121,7 @@ try
             options.UseAspNetCore()
                    .EnableTokenEndpointPassthrough()
                    .EnableAuthorizationEndpointPassthrough()
+                   .EnableUserInfoEndpointPassthrough()
                    .EnableEndSessionEndpointPassthrough();
 
             var tokenLifetimes = builder.Configuration
@@ -165,7 +171,13 @@ try
         });
     });
 
-    // CORS — allow App.Web origin (configurable via Cors:AllowedOrigins)
+    // CORS — two policies:
+    //   "VaultexCors"  — for our own SPA (/api/*), restricted origins, allows credentials.
+    //   "OidcPublic"   — for OIDC public endpoints (/connect/*, /.well-known/*),
+    //                    open to any origin so third-party SPAs can complete the auth code
+    //                    + PKCE flow. No credentials (cookies) are used on these endpoints,
+    //                    so AllowAnyOrigin is safe — clients are authenticated via PKCE
+    //                    and client_secret in the request body.
     var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
         ?? ["https://localhost:7066", "https://localhost:7108"];
     builder.Services.AddCors(options =>
@@ -176,6 +188,14 @@ try
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
+        });
+
+        options.AddPolicy("OidcPublic", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .WithMethods("GET", "POST", "OPTIONS")
+                  .WithExposedHeaders("WWW-Authenticate");
         });
     });
 
@@ -281,7 +301,18 @@ try
 
     app.UseHttpsRedirection();
     app.UseStaticFiles();
-    app.UseCors("VaultexCors");
+
+    // OIDC public endpoints (/connect/*, /.well-known/*) → open CORS, no credentials.
+    // Everything else → restricted origins with credentials.
+    app.UseWhen(
+        ctx => ctx.Request.Path.StartsWithSegments("/connect") ||
+               ctx.Request.Path.StartsWithSegments("/.well-known"),
+        branch => branch.UseCors("OidcPublic"));
+    app.UseWhen(
+        ctx => !ctx.Request.Path.StartsWithSegments("/connect") &&
+               !ctx.Request.Path.StartsWithSegments("/.well-known"),
+        branch => branch.UseCors("VaultexCors"));
+
     app.UseRateLimiter();
 
     // Security headers
