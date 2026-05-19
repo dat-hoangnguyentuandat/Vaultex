@@ -50,11 +50,12 @@
         {
             <input type="hidden" name="@param.Key" value="@param.Value" />
         }
+        <input type="hidden" name="consent" id="consent-hidden" value="" />
         <div class="auth-btn-row">
-            <button type="submit" name="consent" value="deny" class="btn-auth-outline" id="deny-btn">
+            <button type="button" onclick="submitConsent('deny')" class="btn-auth-outline" id="deny-btn">
                 Từ chối
             </button>
-            <button type="submit" name="consent" value="allow" class="btn-auth-primary" id="allow-btn">
+            <button type="button" onclick="submitConsent('allow')" class="btn-auth-primary" id="allow-btn">
                 Cho phép
             </button>
         </div>
@@ -113,14 +114,15 @@
 </style>
 
 <script>
-    document.getElementById('consent-form').addEventListener('submit', function (e) {
-        const clicked = document.activeElement;
+    function submitConsent(value) {
         const allowBtn = document.getElementById('allow-btn');
         const denyBtn = document.getElementById('deny-btn');
+        document.getElementById('consent-hidden').value = value;
         allowBtn.disabled = true;
         denyBtn.disabled = true;
-        if (clicked === allowBtn) {
+        if (value === 'allow') {
             allowBtn.innerHTML = '<span class="btn-spinner"></span>Đang xử lý...';
         }
-    });
+        document.getElementById('consent-form').submit();
+    }
 </script>

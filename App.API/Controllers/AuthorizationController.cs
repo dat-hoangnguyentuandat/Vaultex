@@ -124,14 +124,16 @@ public class AuthorizationController : ControllerBase
         var request = HttpContext.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
-        var result = await HttpContext.AuthenticateAsync();
+        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
         if (result is not { Succeeded: true })
         {
-            return Challenge(new AuthenticationProperties
-            {
-                RedirectUri = Request.PathBase + Request.Path + QueryString.Create(
-                    Request.HasFormContentType ? Request.Form : Request.Query)
-            });
+            return Challenge(
+                new AuthenticationProperties
+                {
+                    RedirectUri = Request.PathBase + Request.Path + QueryString.Create(
+                        Request.HasFormContentType ? Request.Form : Request.Query)
+                },
+                IdentityConstants.ApplicationScheme);
         }
 
         var user = await _userManager.GetUserAsync(result.Principal)

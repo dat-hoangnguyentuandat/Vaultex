@@ -22,6 +22,7 @@ public class RegisterModel : PageModel
     public int Step { get; private set; } = 1;
     public bool ShowSuccess { get; private set; }
     public List<string> ServerErrors { get; private set; } = [];
+    public string? ReturnUrl { get; private set; }
 
     public RegisterDto Info { get; set; } = new();
     public RegisterPasswordDto Pwd { get; set; } = new();
@@ -58,7 +59,7 @@ public class RegisterModel : PageModel
     public static string EyeClosedSvgJs => EyeClosedSvg.Replace("'", "\\'");
     public static string EyeOpenSvgJs => EyeOpenSvg.Replace("'", "\\'");
 
-    public IActionResult OnGet(int step = 1)
+    public IActionResult OnGet(int step = 1, string? returnUrl = null)
     {
         if (step == 2)
         {
@@ -69,10 +70,11 @@ public class RegisterModel : PageModel
             RestoreInfoFromTempData();
             Step = 2;
         }
+        ReturnUrl = returnUrl ?? TempData.Peek("reg_returnUrl") as string;
         return Page();
     }
 
-    public IActionResult OnPostInfo()
+    public IActionResult OnPostInfo(string? returnUrl = null)
     {
         BindInfo();
         TryValidateModel(Info, nameof(Info));
@@ -84,6 +86,7 @@ public class RegisterModel : PageModel
         if (!ModelState.IsValid)
         {
             Step = 1;
+            ReturnUrl = returnUrl;
             return Page();
         }
 
@@ -93,12 +96,14 @@ public class RegisterModel : PageModel
         TempData["reg_dob"] = Info.DateOfBirth?.ToString("yyyy-MM-dd");
         TempData["reg_co"] = Info.Company;
         TempData["reg_pos"] = Info.Position;
+        if (!string.IsNullOrEmpty(returnUrl))
+            TempData["reg_returnUrl"] = returnUrl;
 
-        return RedirectToPage(new { step = 2 });
+        return RedirectToPage(new { step = 2, returnUrl });
     }
 
     [EnableRateLimiting("RegistrationSubmit")]
-    public async Task<IActionResult> OnPostRegisterAsync()
+    public async Task<IActionResult> OnPostRegisterAsync(string? returnUrl = null)
     {
         var email = TempData["reg_email"] as string;
 
@@ -109,6 +114,8 @@ public class RegisterModel : PageModel
         TryValidateModel(Pwd, nameof(Pwd));
 
         TempData.Keep();
+
+        ReturnUrl = returnUrl ?? TempData.Peek("reg_returnUrl") as string;
 
         if (!ModelState.IsValid)
         {

@@ -378,6 +378,7 @@ try
     app.UseAuthentication();
     app.UseMiddleware<App.Infrastructure.Middleware.TokenBlacklistMiddleware>();
     app.UseAuthorization();
+    app.MapGet("/", () => Results.Redirect("/account/login"));
     app.MapRazorPages();
     app.MapControllers();
     app.MapHealthChecks("/health");
