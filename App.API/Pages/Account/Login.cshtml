@@ -79,7 +79,7 @@
     <div class="auth-login-footer">
         <div class="auth-footer-link">
             <span data-i18n="login.no_account">Chưa có tài khoản?</span>
-            <a href="/account/register" data-i18n="login.register">Đăng ký</a>
+            <a href="/account/register@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" data-i18n="login.register">Đăng ký</a>
         </div>
         @if (Model.EmailNotConfirmed)
         {

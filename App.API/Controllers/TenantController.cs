@@ -201,6 +201,20 @@ namespace App.API.Controllers
 
             return Ok(new { userId = user.Id, user.Email, tenantId = tenant.Id });
         }
+
+        [HttpGet("~/api/platform/stats")]
+        public async Task<IActionResult> GetStats()
+        {
+            var tenantCount = await _db.Tenants.IgnoreQueryFilters().CountAsync();
+            var activeTenants = await _db.Tenants.IgnoreQueryFilters()
+                .CountAsync(t => t.Status == TenantStatus.Active);
+            var userCount = await _db.Users.IgnoreQueryFilters().CountAsync();
+            var today = DateTime.UtcNow.Date;
+            var auditToday = await _db.AuditLogs
+                .CountAsync(a => a.Timestamp >= today);
+
+            return Ok(new { tenantCount, activeTenants, userCount, auditToday });
+        }
     }
 
     public record TenantCreateRequest(string Name, string Subdomain, string? Region);

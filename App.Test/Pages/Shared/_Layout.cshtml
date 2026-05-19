@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - App.Test</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="container">
+            <a class="brand" asp-page="/Index">App.Test</a>
+            <nav>
+                <a asp-page="/Index">Trang chủ</a>
+                <a asp-page="/Profile">Hồ sơ</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span class="user">@User.Identity.Name</span>
+                    <a asp-page="/Account/Logout" class="btn btn-ghost">Đăng xuất</a>
+                }
+                else
+                {
+                    <a asp-page="/Account/Login" class="btn btn-primary">Đăng nhập với Vaultex</a>
+                }
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <small>App.Test &mdash; demo bên thứ 3 import Vaultex qua OIDC</small>
+        </div>
+    </footer>
+</body>
+</html>

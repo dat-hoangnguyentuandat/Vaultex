@@ -11,17 +11,20 @@ namespace App.Infrastructure.Services
     public class AuthService : IAuthService
     {
         private readonly UserManager<User> _userManager;
+        private readonly RoleManager<AppRole> _roleManager;
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
         private readonly AuditLogService _auditLog;
 
         public AuthService(
             UserManager<User> userManager,
+            RoleManager<AppRole> roleManager,
             IEmailSender emailSender,
             IConfiguration config,
             AuditLogService auditLog)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _emailSender = emailSender;
             _config = config;
             _auditLog = auditLog;
@@ -71,6 +74,15 @@ namespace App.Infrastructure.Services
 
             // Assign Viewer role scoped to tenant if tenantId provided, else global Viewer
             var roleName = tenantId.HasValue ? $"{tenantId}:{Roles.Viewer}" : Roles.Viewer;
+            if (await _roleManager.FindByNameAsync(roleName) is null)
+            {
+                await _roleManager.CreateAsync(new AppRole
+                {
+                    Name = roleName,
+                    NormalizedName = roleName.ToUpperInvariant(),
+                    TenantId = tenantId
+                });
+            }
             await _userManager.AddToRoleAsync(user, roleName);
 
             await _auditLog.LogAsync(AuditEventTypes.Register, tenantId, user.Id,
