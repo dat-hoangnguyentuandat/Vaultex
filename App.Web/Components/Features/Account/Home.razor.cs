@@ -15,4 +15,13 @@ public partial class Home : ComponentBase
         if (parts.Length == 1) return parts[0][0].ToString().ToUpper();
         return $"{parts[0][0]}{parts[^1][0]}".ToUpper();
     }
+
+    protected string GetFirstName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "there";
+        var trimmed = name.Trim();
+        if (trimmed.Contains('@')) trimmed = trimmed.Split('@')[0];
+        var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length > 0 ? parts[0] : "there";
+    }
 }

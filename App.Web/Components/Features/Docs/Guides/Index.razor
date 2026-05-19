@@ -1,0 +1,54 @@
+@page "/docs/guides"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Integration guides — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Integration guides</div>
+<h1>Integration guides</h1>
+<p class="docs-lead">
+    Recipes for adding Vaultex to common stacks. Each guide is a complete walkthrough &mdash;
+    install, configure, sign a user in, call a protected API.
+</p>
+
+<div class="docs-card-grid">
+    <a href="/docs/guides/dotnet" class="docs-card">
+        <div class="docs-card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6z"/></svg>
+        </div>
+        <div class="docs-card-title">ASP.NET Core</div>
+        <div class="docs-card-desc">MVC, Razor Pages, Blazor Server, and Web API patterns.</div>
+    </a>
+    <a href="/docs/guides/spa" class="docs-card">
+        <div class="docs-card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 18l-10-5v-3l10 5 10-5v3l-10 5z"/></svg>
+        </div>
+        <div class="docs-card-title">Single-page apps</div>
+        <div class="docs-card-desc">React, Vue, Angular with the OAuth code flow + PKCE.</div>
+    </a>
+    <a href="/docs/guides/node" class="docs-card">
+        <div class="docs-card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4z"/></svg>
+        </div>
+        <div class="docs-card-title">Node.js backend</div>
+        <div class="docs-card-desc">Express + openid-client. JWT validation with jose.</div>
+    </a>
+    <a href="/docs/guides/mobile" class="docs-card">
+        <div class="docs-card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/></svg>
+        </div>
+        <div class="docs-card-title">Mobile apps</div>
+        <div class="docs-card-desc">iOS Swift and Android Kotlin via the AppAuth library.</div>
+    </a>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/sso" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Single sign-on</div>
+    </a>
+    <a href="/docs/guides/dotnet" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">ASP.NET Core →</div>
+    </a>
+</div>

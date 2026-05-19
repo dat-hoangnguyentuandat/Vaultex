@@ -1,0 +1,68 @@
+@page "/docs/api-reference"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>API reference — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">API reference</div>
+<h1>API reference</h1>
+<p class="docs-lead">
+    Vaultex exposes a standards-compliant OpenID Connect provider. Every endpoint is listed below
+    with its parameters, request body, and response shape.
+</p>
+
+<h2 id="base-url">Base URL</h2>
+<div class="docs-endpoint">
+    <span>https://auth.vaultex.io</span>
+</div>
+<p>
+    All endpoints are relative to this base URL. In a development environment Vaultex runs at
+    <code>https://localhost:7108</code>.
+</p>
+
+<h2 id="endpoints">Endpoints</h2>
+<table>
+    <thead><tr><th>Endpoint</th><th>Method</th><th>Purpose</th></tr></thead>
+    <tbody>
+        <tr><td><a href="/docs/api-reference/discovery">/.well-known/openid-configuration</a></td><td><span class="docs-method docs-method--get">GET</span></td><td>OIDC metadata document</td></tr>
+        <tr><td><a href="/docs/api-reference/discovery">/.well-known/jwks</a></td><td><span class="docs-method docs-method--get">GET</span></td><td>Public signing keys</td></tr>
+        <tr><td><a href="/docs/api-reference/authorize">/connect/authorize</a></td><td><span class="docs-method docs-method--get">GET</span></td><td>Start an authorization request</td></tr>
+        <tr><td><a href="/docs/api-reference/token">/connect/token</a></td><td><span class="docs-method docs-method--post">POST</span></td><td>Exchange code or refresh token for access tokens</td></tr>
+        <tr><td><a href="/docs/api-reference/userinfo">/connect/userinfo</a></td><td><span class="docs-method docs-method--get">GET</span></td><td>Read claims about the current user</td></tr>
+        <tr><td><a href="/docs/api-reference/logout">/connect/logout</a></td><td><span class="docs-method docs-method--get">GET</span></td><td>End the user's session</td></tr>
+        <tr><td><a href="/docs/api-reference/revocation">/connect/revocation</a></td><td><span class="docs-method docs-method--post">POST</span></td><td>Revoke an issued token</td></tr>
+    </tbody>
+</table>
+
+<h2 id="auth">Authentication</h2>
+<p>Endpoints that need client credentials accept them in two ways:</p>
+<ul>
+    <li><strong>HTTP Basic</strong> &mdash; <code>Authorization: Basic base64(client_id:client_secret)</code></li>
+    <li><strong>Form post</strong> &mdash; <code>client_id</code> and <code>client_secret</code> as form fields</li>
+</ul>
+<p>Public clients (SPAs, mobile) don't have a secret. They send <code>client_id</code> and prove their identity with PKCE.</p>
+
+<h2 id="errors">Error responses</h2>
+<p>Errors follow the OAuth 2.0 / OIDC error format:</p>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "error": "invalid_grant",
+  "error_description": "The authorization code has expired."
+}</code></pre>
+</div>
+<p>See the <a href="/docs/errors">error reference</a> for every code Vaultex can return.</p>
+
+<div class="docs-pager">
+    <a href="/docs/guides/mobile" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Mobile</div>
+    </a>
+    <a href="/docs/api-reference/discovery" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Discovery →</div>
+    </a>
+</div>

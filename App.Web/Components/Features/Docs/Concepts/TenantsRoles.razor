@@ -1,0 +1,65 @@
+@page "/docs/concepts/tenants-roles"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Tenants &amp; roles — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Concepts</div>
+<h1>Tenants &amp; roles</h1>
+<p class="docs-lead">
+    Vaultex is multi-tenant from the ground up. Every user, role, and policy belongs to exactly one
+    tenant, and tenants never see each other's data. This page explains how to model your customers
+    and what role choices make sense.
+</p>
+
+<h2 id="model">The model</h2>
+<ul>
+    <li>A <strong>Vaultex deployment</strong> hosts many tenants.</li>
+    <li>A <strong>tenant</strong> is one customer or environment. It owns users, roles, policies, audit logs.</li>
+    <li>A <strong>user</strong> belongs to exactly one tenant.</li>
+    <li>A <strong>role</strong> is a name like <code>Admin</code> or <code>Viewer</code>, scoped to its tenant.</li>
+</ul>
+
+<h2 id="tid">How tenant context flows</h2>
+<p>
+    Vaultex stamps every token with a <code>tid</code> claim. Your app reads it and applies it as a
+    filter on every query. Tenants never collide because your data layer enforces the boundary.
+</p>
+
+<h2 id="builtin-roles">Built-in roles</h2>
+<table>
+    <thead><tr><th>Role</th><th>What it can do</th></tr></thead>
+    <tbody>
+        <tr><td><code>PlatformAdmin</code></td><td>Manage all tenants. Assigned by you, the operator. Not a tenant role.</td></tr>
+        <tr><td><code>Admin</code></td><td>Full control inside one tenant: users, roles, policies.</td></tr>
+        <tr><td><code>Manager</code></td><td>Manage users inside one tenant. Cannot edit roles or policies.</td></tr>
+        <tr><td><code>Viewer</code></td><td>Read-only access. The default for new sign-ups.</td></tr>
+    </tbody>
+</table>
+
+<h2 id="custom-roles">Custom roles</h2>
+<p>
+    Add your own roles in <strong>Admin → Roles</strong>. They show up as <code>role</code> claims
+    in tokens, and you can use them in your app's <code>[Authorize(Roles = "...")]</code> checks.
+</p>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Roles vs policies</div>
+        <p>Roles are coarse-grained ("manager"). Policies are fine-grained ("user X can edit invoice Y"). Use roles for org structure, policies for resource-level access.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/scopes-claims" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Scopes &amp; claims</div>
+    </a>
+    <a href="/docs/concepts/sso" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Single sign-on →</div>
+    </a>
+</div>

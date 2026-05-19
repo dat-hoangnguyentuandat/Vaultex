@@ -11,16 +11,16 @@
     <div class="admin-main">
         <header class="admin-topbar">
             <div class="admin-topbar-left">
-                <span class="admin-topbar-title">Vaultex</span>
+                <span class="admin-topbar-title">@I18n.T("nav.admin")</span>
             </div>
             <div class="admin-topbar-right">
                 <ThemeToggle />
                 <LangPicker />
-                <a href="/" class="admin-topbar-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <a href="/welcome" class="admin-topbar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                     </svg>
-                    @I18n.T("nav.home")
+                    Console
                 </a>
                 <a href="/api/auth/logout" class="admin-topbar-logout">@I18n.T("common.signOut")</a>
             </div>

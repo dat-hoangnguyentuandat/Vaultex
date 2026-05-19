@@ -1,0 +1,88 @@
+@page "/docs/guides/mobile"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Mobile integration — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Integration guide</div>
+<h1>Mobile apps</h1>
+<p class="docs-lead">
+    Native iOS and Android apps use the same OAuth 2.0 + PKCE flow as SPAs, but launch the sign-in
+    in a system browser tab and receive the callback via a custom URL scheme.
+</p>
+
+<h2 id="register">1. Register a native client</h2>
+<ul>
+    <li>Client type: <code>Public</code></li>
+    <li>Redirect URI: <code>com.yourcompany.yourapp://callback</code></li>
+</ul>
+
+<h2 id="ios">iOS (Swift, AppAuth)</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Swift</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>import AppAuth
+
+let issuer = URL(string: "https://auth.vaultex.io")!
+OIDAuthorizationService.discoverConfiguration(forIssuer: issuer) { config, error in
+    guard let config = config else { return }
+
+    let request = OIDAuthorizationRequest(
+        configuration: config,
+        clientId: "your-mobile-client-id",
+        scopes: [OIDScopeOpenID, OIDScopeProfile, "email"],
+        redirectURL: URL(string: "com.yourcompany.yourapp://callback")!,
+        responseType: OIDResponseTypeCode,
+        additionalParameters: nil)
+
+    OIDAuthState.authState(byPresenting: request, presenting: self) { state, err in
+        // store `state` (contains tokens)
+    }
+}</code></pre>
+</div>
+
+<h2 id="android">Android (Kotlin, AppAuth)</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Kotlin</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>val config = AuthorizationServiceConfiguration.fetchFromIssuer(
+    Uri.parse("https://auth.vaultex.io")) { config, ex -&gt;
+        if (config == null) return@fetchFromIssuer
+
+        val request = AuthorizationRequest.Builder(
+            config,
+            "your-mobile-client-id",
+            ResponseTypeValues.CODE,
+            Uri.parse("com.yourcompany.yourapp://callback"))
+            .setScopes("openid", "profile", "email")
+            .build()
+
+        val service = AuthorizationService(this)
+        startActivityForResult(service.getAuthorizationRequestIntent(request), RC_AUTH)
+    }</code></pre>
+</div>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Always use a system browser</div>
+        <p>Embedded WebViews are blocked by Vaultex. They expose users to credential phishing and break federated identity providers. Use ASWebAuthenticationSession on iOS and Custom Tabs on Android.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/guides/node" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Node.js</div>
+    </a>
+    <a href="/docs/api-reference" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">API reference →</div>
+    </a>
+</div>

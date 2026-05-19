@@ -1,4 +1,4 @@
-@page "/"
+@page "/welcome"
 @layout CleanLayout
 @using Microsoft.AspNetCore.Components.Authorization
 
@@ -7,23 +7,31 @@
 <AuthorizeView>
     <Authorized>
         <div class="home-wrapper">
-            <div class="home-header">
-                <div class="home-header-content">
-                    <div class="home-avatar">
-                        @GetInitials(context.User.Identity?.Name)
+            <header class="home-topbar">
+                <a href="/" class="home-topbar-brand">
+                    <div class="home-topbar-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
                     </div>
-                    <div>
-                        <div class="home-greeting">@I18n.T("home.welcome")</div>
-                        <div class="home-username">@context.User.Identity?.Name</div>
-                    </div>
-                </div>
-                <div class="home-header-actions">
+                    <span>Vaultex</span>
+                    <span class="home-topbar-tag">Console</span>
+                </a>
+                <div class="home-topbar-actions">
                     <ThemeToggle />
                     <LangPicker />
                 </div>
-            </div>
+            </header>
 
-            <div class="home-cards">
+            <section class="home-hero">
+                <div class="home-eyebrow">@I18n.T("home.welcome")</div>
+                <h1 class="home-title">
+                    Hello, <em>@(GetFirstName(context.User.Identity?.Name))</em>
+                </h1>
+                <p class="home-sub">Manage your account, configure access, and review activity across your tenant.</p>
+            </section>
+
+            <section class="home-cards">
                 <a href="/profile" class="home-card">
                     <div class="home-card-icon home-card-icon--blue">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -53,7 +61,7 @@
                         </a>
                     </Authorized>
                 </AuthorizeView>
-            </div>
+            </section>
 
             <div class="home-footer-actions">
                 <a href="api/auth/logout" class="home-logout-btn">@I18n.T("common.signOut")</a>
@@ -88,6 +96,7 @@
             <div class="google-landing-footer">
                 <LangPicker />
                 <ThemeToggle />
+                <a href="/docs">Docs</a>
                 <a href="#">@I18n.T("footer.privacy")</a>
                 <a href="#">@I18n.T("footer.terms")</a>
                 <a href="#">@I18n.T("footer.help")</a>

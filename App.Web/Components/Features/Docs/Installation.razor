@@ -1,0 +1,88 @@
+@page "/docs/installation"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Installation — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Get started</div>
+<h1>Installation</h1>
+<p class="docs-lead">
+    Vaultex is a hosted service. There's nothing to deploy on your side &mdash; you just need a
+    tenant and a client. This page covers the workspace setup before you write any code.
+</p>
+
+<h2 id="create-tenant">Create a tenant</h2>
+<p>
+    Tenants isolate your users, roles, policies, and audit logs. Most customers create one tenant
+    per environment (staging, production) or per business unit.
+</p>
+<ol>
+    <li>Go to <a href="/account/register">/account/register</a> and create your account.</li>
+    <li>Pick a subdomain. Your sign-in URL will be <code>https://&lt;subdomain&gt;.vaultex.io</code>.</li>
+    <li>You'll be signed in as the tenant's first <strong>Admin</strong>.</li>
+</ol>
+
+<h2 id="register-client">Register a client</h2>
+<p>
+    Each app that signs users in needs its own client record. Open <strong>Admin → Clients</strong>
+    and click <strong>New client</strong>. You'll be asked for:
+</p>
+
+<table>
+    <thead><tr><th>Field</th><th>What it means</th></tr></thead>
+    <tbody>
+        <tr><td><code>client_id</code></td><td>A unique identifier for this app. Lowercase, no spaces.</td></tr>
+        <tr><td>Client type</td><td>Confidential (has a secret, used by backends) or Public (browser/native, uses PKCE).</td></tr>
+        <tr><td>Redirect URIs</td><td>Where Vaultex redirects after sign-in. One per line.</td></tr>
+        <tr><td>Post-logout URIs</td><td>Where to land users after sign-out.</td></tr>
+        <tr><td>Allowed scopes</td><td>Which scopes this client can request. Pick from <code>openid profile email roles offline_access</code>.</td></tr>
+    </tbody>
+</table>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Redirect URIs are exact-match</div>
+        <p>Vaultex rejects any redirect URI that doesn't match exactly &mdash; including trailing slashes, query strings, and protocol. Add every URI you'll use, including localhost ones for development.</p>
+    </div>
+</div>
+
+<h2 id="discovery">Discovery endpoint</h2>
+<p>
+    Vaultex publishes its OIDC metadata at a well-known URL. Most client libraries fetch this
+    automatically when you set the <strong>authority</strong>:
+</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--get">GET</span>
+    <span>https://auth.vaultex.io/.well-known/openid-configuration</span>
+</div>
+
+<p>You should rarely need to read this directly &mdash; it's there for SDKs to auto-configure.</p>
+
+<h2 id="env">Environment variables</h2>
+<p>Save these in a <code>.env</code> or app settings file. Never commit them to source control.</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Bash</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>VAULTEX_AUTHORITY="https://auth.vaultex.io"
+VAULTEX_CLIENT_ID="your-client-id"
+VAULTEX_CLIENT_SECRET="your-client-secret"   # confidential clients only
+VAULTEX_REDIRECT_URI="https://yourapp.com/signin-oidc"</code></pre>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/quickstart" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Quickstart</div>
+    </a>
+    <a href="/docs/authentication" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Authentication basics →</div>
+    </a>
+</div>

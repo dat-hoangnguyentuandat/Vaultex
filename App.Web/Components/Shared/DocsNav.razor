@@ -1,0 +1,70 @@
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="docs-nav-section">
+    <div class="docs-nav-section-title">Get started</div>
+    <a href="/docs" class="@Active("/docs", exact: true)">Introduction</a>
+    <a href="/docs/quickstart" class="@Active("/docs/quickstart")">Quickstart</a>
+    <a href="/docs/installation" class="@Active("/docs/installation")">Installation</a>
+    <a href="/docs/authentication" class="@Active("/docs/authentication")">Authentication basics</a>
+</div>
+
+<div class="docs-nav-section">
+    <div class="docs-nav-section-title">Concepts</div>
+    <a href="/docs/concepts/oauth-flow" class="@Active("/docs/concepts/oauth-flow")">OAuth 2.0 + PKCE</a>
+    <a href="/docs/concepts/tokens" class="@Active("/docs/concepts/tokens")">Tokens</a>
+    <a href="/docs/concepts/scopes-claims" class="@Active("/docs/concepts/scopes-claims")">Scopes &amp; claims</a>
+    <a href="/docs/concepts/tenants-roles" class="@Active("/docs/concepts/tenants-roles")">Tenants &amp; roles</a>
+    <a href="/docs/concepts/sso" class="@Active("/docs/concepts/sso")">Single sign-on</a>
+</div>
+
+<div class="docs-nav-section">
+    <div class="docs-nav-section-title">Integration guides</div>
+    <a href="/docs/guides/dotnet" class="@Active("/docs/guides/dotnet")">ASP.NET Core</a>
+    <a href="/docs/guides/spa" class="@Active("/docs/guides/spa")">SPA (React, Vue)</a>
+    <a href="/docs/guides/node" class="@Active("/docs/guides/node")">Node.js backend</a>
+    <a href="/docs/guides/mobile" class="@Active("/docs/guides/mobile")">Mobile apps</a>
+</div>
+
+<div class="docs-nav-section">
+    <div class="docs-nav-section-title">API reference</div>
+    <a href="/docs/api-reference" class="@Active("/docs/api-reference", exact: true)">Overview</a>
+    <a href="/docs/api-reference/discovery" class="@Active("/docs/api-reference/discovery")">Discovery</a>
+    <a href="/docs/api-reference/authorize" class="@Active("/docs/api-reference/authorize")">Authorize</a>
+    <a href="/docs/api-reference/token" class="@Active("/docs/api-reference/token")">Token</a>
+    <a href="/docs/api-reference/userinfo" class="@Active("/docs/api-reference/userinfo")">UserInfo</a>
+    <a href="/docs/api-reference/logout" class="@Active("/docs/api-reference/logout")">Logout</a>
+    <a href="/docs/api-reference/revocation" class="@Active("/docs/api-reference/revocation")">Revocation</a>
+</div>
+
+<div class="docs-nav-section">
+    <div class="docs-nav-section-title">Resources</div>
+    <a href="/docs/changelog" class="@Active("/docs/changelog")">Changelog</a>
+    <a href="/docs/errors" class="@Active("/docs/errors")">Error reference</a>
+    <a href="/docs/support" class="@Active("/docs/support")">Support</a>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+
+    private string Active(string href, bool exact = false)
+    {
+        var path = new Uri(Nav.Uri).AbsolutePath.TrimEnd('/').ToLowerInvariant();
+        var target = href.TrimEnd('/').ToLowerInvariant();
+        var match = exact ? path == target : (path == target || path.StartsWith(target + "/"));
+        return "docs-nav-link" + (match ? " active" : "");
+    }
+}

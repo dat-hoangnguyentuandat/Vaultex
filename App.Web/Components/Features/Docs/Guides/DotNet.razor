@@ -1,0 +1,162 @@
+@page "/docs/guides/dotnet"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>ASP.NET Core integration — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Integration guide</div>
+<h1>ASP.NET Core</h1>
+<p class="docs-lead">
+    A complete walkthrough for adding Vaultex to an ASP.NET Core 8+ application. Covers MVC, Razor
+    Pages, Blazor Server, and Web API scenarios.
+</p>
+
+<h2 id="install">1. Install packages</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Bash</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>dotnet add package Microsoft.AspNetCore.Authentication.OpenIdConnect
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer</code></pre>
+</div>
+
+<h2 id="web-app">2. Configure a web app (cookie + OIDC)</h2>
+<p>For server-rendered apps, use the cookie + OIDC combination. The cookie holds the local session, OIDC handles the redirect dance.</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>// Program.cs
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+
+builder.Services.AddAuthentication(o =&gt;
+{
+    o.DefaultScheme         = CookieAuthenticationDefaults.AuthenticationScheme;
+    o.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+})
+.AddCookie(o =&gt;
+{
+    o.ExpireTimeSpan      = TimeSpan.FromHours(8);
+    o.SlidingExpiration   = true;
+})
+.AddOpenIdConnect(o =&gt;
+{
+    o.Authority    = "https://auth.vaultex.io";
+    o.ClientId     = builder.Configuration["Vaultex:ClientId"];
+    o.ClientSecret = builder.Configuration["Vaultex:ClientSecret"];
+    o.ResponseType = "code";
+    o.UsePkce      = true;
+    o.SaveTokens   = true;
+
+    o.Scope.Clear();
+    o.Scope.Add("openid");
+    o.Scope.Add("profile");
+    o.Scope.Add("email");
+    o.Scope.Add("roles");
+    o.Scope.Add("offline_access");
+
+    o.MapInboundClaims = false;
+    o.TokenValidationParameters.NameClaimType = "name";
+    o.TokenValidationParameters.RoleClaimType = "role";
+});
+
+builder.Services.AddAuthorization();
+
+var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();</code></pre>
+</div>
+
+<h2 id="api">3. Configure a Web API (JWT bearer)</h2>
+<p>APIs validate access tokens. They don't redirect &mdash; they accept or reject incoming bearer tokens.</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", o =&gt;
+    {
+        o.Authority = "https://auth.vaultex.io";
+        o.Audience  = "your-api-resource";
+        o.MapInboundClaims = false;
+        o.TokenValidationParameters.NameClaimType = "name";
+        o.TokenValidationParameters.RoleClaimType = "role";
+    });
+
+builder.Services.AddAuthorization(o =&gt;
+{
+    o.AddPolicy("CanManageUsers", p =&gt; p.RequireRole("Admin", "Manager"));
+});</code></pre>
+</div>
+
+<h2 id="protect">4. Protect endpoints</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>// MVC
+[Authorize(Roles = "Admin")]
+public class AdminController : Controller { }
+
+// Razor Pages
+[Authorize]
+public class IndexModel : PageModel { }
+
+// Minimal API
+app.MapGet("/me", (ClaimsPrincipal user) =&gt; new
+{
+    Id    = user.FindFirst("sub")?.Value,
+    Name  = user.FindFirst("name")?.Value,
+    Roles = user.FindAll("role").Select(c =&gt; c.Value)
+}).RequireAuthorization();</code></pre>
+</div>
+
+<h2 id="logout">5. Sign out</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>app.MapGet("/logout", () =&gt; Results.SignOut(
+    properties: new AuthenticationProperties { RedirectUri = "/" },
+    authenticationSchemes: new[]
+    {
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        OpenIdConnectDefaults.AuthenticationScheme
+    }));</code></pre>
+</div>
+
+<h2 id="blazor">Blazor Server notes</h2>
+<p>
+    Blazor Server uses the same cookie + OIDC setup. Add <code>AddCascadingAuthenticationState()</code>
+    so <code>&lt;AuthorizeView&gt;</code> works in components, and use <code>[CascadingParameter]
+    Task&lt;AuthenticationState&gt;</code> when you need claims in code-behind.
+</p>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">In Docker?</div>
+        <p>If your container talks to Vaultex over an internal hostname while the browser uses a public one, set <code>options.MetadataAddress</code> to the internal URL and <code>options.Authority</code> to the public one.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/sso" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Single sign-on</div>
+    </a>
+    <a href="/docs/guides/spa" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">SPA guide →</div>
+    </a>
+</div>

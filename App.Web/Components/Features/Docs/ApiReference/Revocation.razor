@@ -1,0 +1,60 @@
+@page "/docs/api-reference/revocation"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Revocation — Vaultex API</PageTitle>
+
+<div class="docs-eyebrow">API reference</div>
+<h1>Revocation</h1>
+<p class="docs-lead">
+    Revoke an access or refresh token before its natural expiry. Use this when a user signs out, a
+    device is reported lost, or any time you want to invalidate a session immediately.
+</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--post">POST</span>
+    <span>/connect/revocation</span>
+</div>
+
+<h2 id="parameters">Form parameters</h2>
+<table>
+    <thead><tr><th>Name</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><code>token</code></td><td>Yes</td><td>The token to revoke.</td></tr>
+        <tr><td><code>token_type_hint</code></td><td>Optional</td><td><code>access_token</code> or <code>refresh_token</code>.</td></tr>
+        <tr><td><code>client_id</code></td><td>Yes</td><td>Client identifier.</td></tr>
+        <tr><td><code>client_secret</code></td><td>Confidential clients</td><td>Or HTTP Basic.</td></tr>
+    </tbody>
+</table>
+
+<h2 id="example">Example</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>POST /connect/revocation HTTP/1.1
+Host: auth.vaultex.io
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic Y2xpZW50OnNlY3JldA==
+
+token=RT_8a3f...
+&amp;token_type_hint=refresh_token</code></pre>
+</div>
+
+<h2 id="response">Response</h2>
+<p>
+    <code>200 OK</code> on success, with no body. The endpoint also returns 200 for unknown tokens
+    &mdash; this is by design, to avoid leaking information about which tokens exist.
+</p>
+
+<div class="docs-pager">
+    <a href="/docs/api-reference/logout" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Logout</div>
+    </a>
+    <a href="/docs/errors" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Error reference →</div>
+    </a>
+</div>

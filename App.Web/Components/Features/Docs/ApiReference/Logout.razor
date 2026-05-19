@@ -1,0 +1,61 @@
+@page "/docs/api-reference/logout"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Logout — Vaultex API</PageTitle>
+
+<div class="docs-eyebrow">API reference</div>
+<h1>Logout</h1>
+<p class="docs-lead">
+    Ends the user's Vaultex session and optionally redirects them back to your app. Also known as
+    the <strong>end_session</strong> endpoint.
+</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--get">GET</span>
+    <span>/connect/logout</span>
+</div>
+
+<h2 id="parameters">Query parameters</h2>
+<table>
+    <thead><tr><th>Name</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><code>id_token_hint</code></td><td>Recommended</td><td>The user's ID token. Lets Vaultex skip the confirmation prompt.</td></tr>
+        <tr><td><code>post_logout_redirect_uri</code></td><td>Optional</td><td>Where to send the user after sign-out. Must match a registered URI.</td></tr>
+        <tr><td><code>state</code></td><td>Optional</td><td>Returned unchanged on the post-logout redirect.</td></tr>
+        <tr><td><code>client_id</code></td><td>Optional</td><td>Identifies the requesting client for logging.</td></tr>
+    </tbody>
+</table>
+
+<h2 id="example">Example</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">URL</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>https://auth.vaultex.io/connect/logout?
+  id_token_hint=eyJhbGciOi...
+  &amp;post_logout_redirect_uri=https%3A%2F%2Fyourapp.com
+  &amp;state=xyz</code></pre>
+</div>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Clear your local session too</div>
+        <p>Hitting <code>/connect/logout</code> ends the Vaultex session, but your app still has its own cookie. Clear that as part of your sign-out flow.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/api-reference/userinfo" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← UserInfo</div>
+    </a>
+    <a href="/docs/api-reference/revocation" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Revocation →</div>
+    </a>
+</div>
