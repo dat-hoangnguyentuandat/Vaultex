@@ -1,0 +1,90 @@
+@page "/docs/concepts/scopes-claims"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Scopes &amp; claims — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Concepts</div>
+<h1>Scopes &amp; claims</h1>
+<p class="docs-lead">
+    Scopes are what your client <em>asks for</em>. Claims are what shows up <em>in the token</em>.
+    This page maps each scope to the claims it includes and explains how to design custom ones.
+</p>
+
+<h2 id="standard-scopes">Standard scopes</h2>
+<table>
+    <thead><tr><th>Scope</th><th>Adds these claims</th></tr></thead>
+    <tbody>
+        <tr><td><code>openid</code></td><td><code>sub</code>. Required for any OIDC sign-in.</td></tr>
+        <tr><td><code>profile</code></td><td><code>name</code>, <code>preferred_username</code>, <code>given_name</code>, <code>family_name</code>, <code>locale</code></td></tr>
+        <tr><td><code>email</code></td><td><code>email</code>, <code>email_verified</code></td></tr>
+        <tr><td><code>roles</code></td><td><code>role</code> (multi-valued, tenant-scoped)</td></tr>
+        <tr><td><code>offline_access</code></td><td>(no claims) Issues a refresh token alongside the access token.</td></tr>
+    </tbody>
+</table>
+
+<h2 id="claim-shapes">Claim shapes</h2>
+<p>Vaultex follows the OIDC standard claim names. Here's a typical decoded ID token:</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "iss":            "https://auth.vaultex.io",
+  "aud":            "your-client-id",
+  "sub":            "f3a7d2c9-1b4e-4f0a-9c2e-1234567890ab",
+  "name":           "Sarah Chen",
+  "preferred_username": "sarah",
+  "email":          "sarah@example.com",
+  "email_verified": true,
+  "tid":            "acme",
+  "role":           ["Admin", "Viewer"],
+  "iat":            1715900400,
+  "exp":            1715904000
+}</code></pre>
+</div>
+
+<h2 id="tenant-claim">The tenant claim</h2>
+<p>
+    Vaultex adds a <code>tid</code> claim to every token. It tells your app which tenant the user
+    belongs to. Use it to scope database queries and feature flags:
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>var tenantId = User.FindFirst("tid")?.Value;
+var orders = await _db.Orders
+    .Where(o =&gt; o.TenantId == tenantId)
+    .ToListAsync();</code></pre>
+</div>
+
+<h2 id="custom">Custom scopes</h2>
+<p>
+    Need to expose a custom permission like <code>billing:write</code>? Define it in the admin
+    portal under <strong>Scopes</strong>, attach it to the relevant client, and your app can request
+    it like any other:
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>options.Scope.Add("billing:write");</code></pre>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/tokens" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Tokens</div>
+    </a>
+    <a href="/docs/concepts/tenants-roles" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Tenants &amp; roles →</div>
+    </a>
+</div>

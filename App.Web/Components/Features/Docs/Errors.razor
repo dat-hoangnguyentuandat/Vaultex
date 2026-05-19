@@ -1,0 +1,81 @@
+@page "/docs/errors"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Error reference — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Reference</div>
+<h1>Error reference</h1>
+<p class="docs-lead">
+    Every error code Vaultex can return, what it means, and what to do about it. All errors follow
+    the OAuth 2.0 / OIDC error format.
+</p>
+
+<h2 id="format">Error format</h2>
+<p>For redirect-based endpoints (authorize, logout), errors come back as query parameters:</p>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">URL</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>https://yourapp.com/callback?error=access_denied&amp;error_description=...&amp;state=xyz</code></pre>
+</div>
+
+<p>For direct API calls (token, revocation, userinfo), errors are JSON with the appropriate status code:</p>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "error": "invalid_grant",
+  "error_description": "The authorization code has expired."
+}</code></pre>
+</div>
+
+<h2 id="oauth">OAuth 2.0 errors</h2>
+<table>
+    <thead><tr><th>Code</th><th>What it means</th><th>What to do</th></tr></thead>
+    <tbody>
+        <tr><td><code>invalid_request</code></td><td>A required parameter is missing or malformed.</td><td>Check the request shape against the API reference.</td></tr>
+        <tr><td><code>invalid_client</code></td><td>The client ID or secret is wrong.</td><td>Verify credentials in your config.</td></tr>
+        <tr><td><code>invalid_grant</code></td><td>Code expired, code already used, or refresh token revoked.</td><td>Send the user back through sign-in.</td></tr>
+        <tr><td><code>unauthorized_client</code></td><td>Client isn't permitted to use this grant type.</td><td>Update grant types in the admin portal.</td></tr>
+        <tr><td><code>unsupported_grant_type</code></td><td>Grant type isn't recognized.</td><td>Use <code>authorization_code</code> or <code>refresh_token</code>.</td></tr>
+        <tr><td><code>invalid_scope</code></td><td>Requested scope is unknown or not allowed for this client.</td><td>Check scope spelling and client config.</td></tr>
+        <tr><td><code>access_denied</code></td><td>User cancelled or consent was denied.</td><td>Show a friendly message and offer to retry.</td></tr>
+        <tr><td><code>server_error</code></td><td>Something went wrong inside Vaultex.</td><td>Retry with backoff. Check status page.</td></tr>
+    </tbody>
+</table>
+
+<h2 id="oidc">OIDC-specific errors</h2>
+<table>
+    <thead><tr><th>Code</th><th>What it means</th></tr></thead>
+    <tbody>
+        <tr><td><code>interaction_required</code></td><td><code>prompt=none</code> was set but the user needs to interact.</td></tr>
+        <tr><td><code>login_required</code></td><td><code>prompt=none</code> was set but the user isn't signed in.</td></tr>
+        <tr><td><code>consent_required</code></td><td><code>prompt=none</code> was set but consent is needed.</td></tr>
+        <tr><td><code>invalid_redirect_uri</code></td><td>The <code>redirect_uri</code> doesn't match a registered URI exactly.</td></tr>
+    </tbody>
+</table>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">When in doubt, restart sign-in</div>
+        <p>Most token-endpoint errors mean the user's session is broken in some recoverable way. Clearing your local cookie and redirecting back to <code>/connect/authorize</code> usually fixes it.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/api-reference/revocation" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Revocation</div>
+    </a>
+    <a href="/docs/changelog" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Changelog →</div>
+    </a>
+</div>

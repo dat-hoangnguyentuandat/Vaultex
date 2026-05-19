@@ -1,0 +1,130 @@
+@page "/docs/api-reference/token"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Token — Vaultex API</PageTitle>
+
+<div class="docs-eyebrow">API reference</div>
+<h1>Token</h1>
+<p class="docs-lead">
+    Exchange an authorization code or refresh token for fresh access tokens.
+</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--post">POST</span>
+    <span>/connect/token</span>
+</div>
+
+<h2 id="content-type">Content type</h2>
+<p><code>application/x-www-form-urlencoded</code>. JSON bodies are not accepted &mdash; this is per OAuth 2.0 spec.</p>
+
+<h2 id="auth-code">Grant: authorization_code</h2>
+<p>Exchange the code received from <code>/connect/authorize</code> for tokens.</p>
+
+<table>
+    <thead><tr><th>Name</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><code>grant_type</code></td><td>Yes</td><td>Must be <code>authorization_code</code>.</td></tr>
+        <tr><td><code>code</code></td><td>Yes</td><td>The code from the authorize redirect.</td></tr>
+        <tr><td><code>redirect_uri</code></td><td>Yes</td><td>Same value used on /authorize.</td></tr>
+        <tr><td><code>client_id</code></td><td>Yes</td><td>Client identifier.</td></tr>
+        <tr><td><code>client_secret</code></td><td>Confidential clients</td><td>Or use HTTP Basic auth.</td></tr>
+        <tr><td><code>code_verifier</code></td><td>Yes</td><td>The original PKCE verifier.</td></tr>
+    </tbody>
+</table>
+
+<h3>Example</h3>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>POST /connect/token HTTP/1.1
+Host: auth.vaultex.io
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&amp;code=Abc123...
+&amp;redirect_uri=https://yourapp.com/callback
+&amp;client_id=your-client-id
+&amp;client_secret=your-client-secret
+&amp;code_verifier=ver_8a3f...</code></pre>
+</div>
+
+<h2 id="refresh">Grant: refresh_token</h2>
+<p>Get a new access token without making the user sign in again.</p>
+
+<table>
+    <thead><tr><th>Name</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><code>grant_type</code></td><td>Yes</td><td>Must be <code>refresh_token</code>.</td></tr>
+        <tr><td><code>refresh_token</code></td><td>Yes</td><td>The refresh token from a previous response.</td></tr>
+        <tr><td><code>client_id</code></td><td>Yes</td><td>Client identifier.</td></tr>
+        <tr><td><code>client_secret</code></td><td>Confidential clients</td><td>Or HTTP Basic.</td></tr>
+        <tr><td><code>scope</code></td><td>Optional</td><td>Narrow the requested scopes.</td></tr>
+    </tbody>
+</table>
+
+<h3>Example</h3>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>POST /connect/token HTTP/1.1
+Host: auth.vaultex.io
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&amp;refresh_token=RT_8a3f...
+&amp;client_id=your-client-id
+&amp;client_secret=your-client-secret</code></pre>
+</div>
+
+<h2 id="response">Response</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "access_token":  "eyJhbGciOi...",
+  "id_token":      "eyJhbGciOi...",
+  "refresh_token": "RT_new_8a3f...",
+  "token_type":    "Bearer",
+  "expires_in":    3600,
+  "scope":         "openid profile email offline_access"
+}</code></pre>
+</div>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Refresh tokens rotate</div>
+        <p>The <code>refresh_token</code> in the response is a new one. The old refresh token is now invalid. Always store the latest one.</p>
+    </div>
+</div>
+
+<h2 id="errors">Common errors</h2>
+<table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td><code>invalid_grant</code></td><td>Code expired, code already used, or refresh token revoked.</td></tr>
+        <tr><td><code>invalid_client</code></td><td>Client ID/secret mismatch.</td></tr>
+        <tr><td><code>invalid_request</code></td><td>Missing or malformed parameter.</td></tr>
+        <tr><td><code>unauthorized_client</code></td><td>Client isn't allowed to use this grant type.</td></tr>
+    </tbody>
+</table>
+
+<div class="docs-pager">
+    <a href="/docs/api-reference/authorize" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Authorize</div>
+    </a>
+    <a href="/docs/api-reference/userinfo" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">UserInfo →</div>
+    </a>
+</div>

@@ -1,0 +1,290 @@
+@page "/"
+@layout LandingLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Vaultex — Identity infrastructure for modern apps</PageTitle>
+
+<section class="landing-hero">
+    <div class="landing-hero-eyebrow">
+        <span class="landing-hero-eyebrow-dot"></span>
+        Vaultex 1.2 is now generally available
+    </div>
+
+    <h1>Identity infrastructure that <em>just works.</em></h1>
+
+    <p class="landing-hero-sub">
+        Vaultex is a multi-tenant identity platform built on OpenID Connect and OAuth 2.0.
+        Authenticate users, manage access, and ship to production with a single integration.
+    </p>
+
+    <div class="landing-hero-actions">
+        <a href="/welcome" class="landing-btn landing-btn--primary">
+            Go to console
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+            </svg>
+        </a>
+        <a href="/docs/quickstart" class="landing-btn landing-btn--ghost">Read the docs</a>
+    </div>
+
+    <div class="landing-feature-card">
+        <div>
+            <div class="landing-feature-eyebrow">Featured</div>
+            <h2 class="landing-feature-title">Sign your first user in, in five minutes.</h2>
+            <p class="landing-feature-desc">
+                Drop in the SDK for your stack, point it at your tenant, and you have a fully working
+                OAuth 2.0 + PKCE flow. No custom protocols. No proprietary lock-in. Just standards
+                your tools already speak.
+            </p>
+            <a href="/docs/quickstart" class="landing-feature-link">
+                Get started
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </a>
+        </div>
+        <div class="landing-codeshow">
+<span class="c">// Program.cs</span><br/>
+<span class="v">builder</span>.Services.<span class="f">AddAuthentication</span>(o =&gt;<br/>
+{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.DefaultScheme = <span class="s">"Cookies"</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.DefaultChallengeScheme = <span class="s">"oidc"</span>;<br/>
+})<br/>
+.<span class="f">AddCookie</span>()<br/>
+.<span class="f">AddOpenIdConnect</span>(<span class="s">"oidc"</span>, o =&gt;<br/>
+{<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.<span class="v">Authority</span>    = <span class="s">"https://auth.vaultex.io"</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.<span class="v">ClientId</span>     = <span class="s">"your-client-id"</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.<span class="v">ResponseType</span> = <span class="s">"code"</span>;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;o.<span class="v">UsePkce</span>      = <span class="k">true</span>;<br/>
+});
+        </div>
+    </div>
+</section>
+
+<section class="landing-section" id="product">
+    <div class="landing-section-header">
+        <div class="landing-section-eyebrow">Built for production</div>
+        <h2>Everything you need. Nothing you don't.</h2>
+        <p class="landing-section-sub">
+            Vaultex ships with the security primitives you'd otherwise spend months building: PKCE on
+            by default, refresh-token rotation, short-lived access tokens, full audit trails.
+        </p>
+    </div>
+
+    <div class="landing-features">
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+            </div>
+            <h3>Standards-first</h3>
+            <p>Every flow speaks OpenID Connect and OAuth 2.0. Your existing libraries already know how to talk to Vaultex.</p>
+        </div>
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10z"/>
+                </svg>
+            </div>
+            <h3>Multi-tenant by design</h3>
+            <p>Host any number of tenants from a single deployment, each isolated at the database layer with tenant-scoped roles.</p>
+        </div>
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                </svg>
+            </div>
+            <h3>SDKs everywhere</h3>
+            <p>First-class guides for .NET, Node.js, React, Vue, iOS and Android. If your stack speaks OIDC, it speaks Vaultex.</p>
+        </div>
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>
+                </svg>
+            </div>
+            <h3>Full audit trail</h3>
+            <p>Every sign-in, role change, and token issuance is recorded with timestamps, IP addresses, and actor identity.</p>
+        </div>
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+            </div>
+            <h3>Roles &amp; policies</h3>
+            <p>Coarse-grained roles for org structure, fine-grained policies for resource access. Both scoped to the tenant.</p>
+        </div>
+        <div class="landing-feature">
+            <div class="landing-feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.18 1.75-.5 2.54l2.62 1.53c.56-1.24.88-2.62.88-4.07 0-5.18-3.95-9.45-9-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-5.06.5-9 4.76-9 9.95 0 5.52 4.47 10 9.99 10 3.31 0 6.24-1.61 8.06-4.09l-2.6-1.53C16.17 17.98 14.21 19 12 19z"/>
+                </svg>
+            </div>
+            <h3>SSO included</h3>
+            <p>One sign-in across every app on the same authority. Step-up auth and forced re-auth for sensitive operations.</p>
+        </div>
+    </div>
+</section>
+
+<div class="landing-stats">
+    <div>
+        <div class="landing-stat-value">&lt; 5min</div>
+        <div class="landing-stat-label">Median time from npm install to first sign-in</div>
+    </div>
+    <div>
+        <div class="landing-stat-value">99.99%</div>
+        <div class="landing-stat-label">Uptime target backed by SLA on paid tiers</div>
+    </div>
+    <div>
+        <div class="landing-stat-value">RS256</div>
+        <div class="landing-stat-label">Token signing with automatic key rotation</div>
+    </div>
+    <div>
+        <div class="landing-stat-value">SOC 2</div>
+        <div class="landing-stat-label">Type II compliance roadmap with quarterly audits</div>
+    </div>
+</div>
+
+<div class="landing-band">
+    <div class="landing-band-inner">
+        <div class="landing-band-title">Built on the standards your stack already speaks</div>
+        <div class="landing-band-row">
+            <span class="landing-band-item">OpenID Connect</span>
+            <span class="landing-band-item">OAuth 2.0</span>
+            <span class="landing-band-item">PKCE</span>
+            <span class="landing-band-item">JWT / JWS</span>
+            <span class="landing-band-item">JWKS</span>
+            <span class="landing-band-item">SAML 2.0</span>
+        </div>
+    </div>
+</div>
+
+<section class="landing-section" id="solutions">
+    <div class="landing-section-header">
+        <div class="landing-section-eyebrow">Use cases</div>
+        <h2>One platform, every kind of app.</h2>
+        <p class="landing-section-sub">
+            From server-rendered web apps to native mobile, Vaultex handles the protocol so you can
+            focus on the product.
+        </p>
+    </div>
+
+    <div class="landing-usecases">
+        <a href="/docs/guides/dotnet" class="landing-usecase">
+            <div class="landing-usecase-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4z"/>
+                </svg>
+            </div>
+            <div>
+                <h3>Server-rendered web apps</h3>
+                <p>Cookie-based sessions backed by OIDC. Works with ASP.NET Core, Express, Django, Rails, and any framework that supports OAuth.</p>
+            </div>
+        </a>
+        <a href="/docs/guides/spa" class="landing-usecase">
+            <div class="landing-usecase-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zm0 18l-10-5v-3l10 5 10-5v3l-10 5z"/>
+                </svg>
+            </div>
+            <div>
+                <h3>Single-page apps</h3>
+                <p>Authorization Code flow with PKCE in the browser. No client secret, no compromise on security. React, Vue, Angular, Svelte.</p>
+            </div>
+        </a>
+        <a href="/docs/guides/mobile" class="landing-usecase">
+            <div class="landing-usecase-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/>
+                </svg>
+            </div>
+            <div>
+                <h3>Native mobile apps</h3>
+                <p>iOS and Android via the AppAuth library. System browser sign-in, secure token storage, biometric step-up.</p>
+            </div>
+        </a>
+        <a href="/docs/guides/node" class="landing-usecase">
+            <div class="landing-usecase-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                </svg>
+            </div>
+            <div>
+                <h3>Backend APIs</h3>
+                <p>Validate access tokens with the JWKS endpoint and standard JWT libraries. No round-trips to Vaultex on every request.</p>
+            </div>
+        </a>
+    </div>
+</section>
+
+<section class="landing-finalcta">
+    <div class="landing-finalcta-inner">
+        <h2>Ship secure auth. Tomorrow.</h2>
+        <p>Spin up a tenant, register a client, and have your first user signing in before lunch.</p>
+        <div class="landing-finalcta-actions">
+            <a href="/welcome" class="landing-btn landing-btn--primary">
+                Go to console
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </a>
+            <a href="/docs" class="landing-btn landing-btn--ghost">Read the docs</a>
+        </div>
+    </div>
+</section>
+
+<footer class="landing-footer" id="company">
+    <div class="landing-footer-inner">
+        <div class="landing-footer-grid">
+            <div class="landing-footer-brand">
+                <a href="/" class="landing-brand">
+                    <div class="landing-brand-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                        </svg>
+                    </div>
+                    Vaultex
+                </a>
+                <p>Identity infrastructure for the next billion apps. Built on open standards, designed for builders.</p>
+            </div>
+            <div class="landing-footer-col">
+                <div class="landing-footer-col-title">Product</div>
+                <ul>
+                    <li><a href="#product">Features</a></li>
+                    <li><a href="#solutions">Use cases</a></li>
+                    <li><a href="/docs/api-reference">API reference</a></li>
+                    <li><a href="/docs/changelog">Changelog</a></li>
+                </ul>
+            </div>
+            <div class="landing-footer-col">
+                <div class="landing-footer-col-title">Resources</div>
+                <ul>
+                    <li><a href="/docs">Documentation</a></li>
+                    <li><a href="/docs/quickstart">Quickstart</a></li>
+                    <li><a href="/docs/guides/dotnet">.NET guide</a></li>
+                    <li><a href="/docs/guides/spa">SPA guide</a></li>
+                </ul>
+            </div>
+            <div class="landing-footer-col">
+                <div class="landing-footer-col-title">Company</div>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Security</a></li>
+                    <li><a href="/docs/support">Support</a></li>
+                    <li><a href="#">Privacy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="landing-footer-bottom">
+            <span>© 2026 Vaultex. All rights reserved.</span>
+            <span>Built with .NET 8 and OpenIddict</span>
+        </div>
+    </div>
+</footer>

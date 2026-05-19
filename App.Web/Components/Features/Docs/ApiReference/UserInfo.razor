@@ -1,0 +1,69 @@
+@page "/docs/api-reference/userinfo"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>UserInfo — Vaultex API</PageTitle>
+
+<div class="docs-eyebrow">API reference</div>
+<h1>UserInfo</h1>
+<p class="docs-lead">
+    Returns claims about the user identified by an access token. Useful when your client doesn't
+    receive an ID token, or when you need fresh claims after profile updates.
+</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--get">GET</span>
+    <span>/connect/userinfo</span>
+</div>
+
+<h2 id="auth">Authentication</h2>
+<p>Send a valid access token in the <code>Authorization</code> header.</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>GET /connect/userinfo HTTP/1.1
+Host: auth.vaultex.io
+Authorization: Bearer eyJhbGciOi...</code></pre>
+</div>
+
+<h2 id="response">Response</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "sub":            "f3a7d2c9-1b4e-4f0a-9c2e-1234567890ab",
+  "name":           "Sarah Chen",
+  "preferred_username": "sarah",
+  "email":          "sarah@example.com",
+  "email_verified": true,
+  "tid":            "acme",
+  "role":           ["Admin", "Viewer"]
+}</code></pre>
+</div>
+
+<p>Which claims you receive depends on the scopes the access token was issued with. See <a href="/docs/concepts/scopes-claims">Scopes &amp; claims</a>.</p>
+
+<h2 id="errors">Errors</h2>
+<table>
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+        <tr><td><code>401 Unauthorized</code></td><td>Missing, expired, or invalid access token.</td></tr>
+        <tr><td><code>403 Forbidden</code></td><td>Token lacks the <code>openid</code> scope.</td></tr>
+    </tbody>
+</table>
+
+<div class="docs-pager">
+    <a href="/docs/api-reference/token" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Token</div>
+    </a>
+    <a href="/docs/api-reference/logout" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Logout →</div>
+    </a>
+</div>
