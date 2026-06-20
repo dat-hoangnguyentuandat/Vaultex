@@ -1,0 +1,47 @@
+@page "/docs/changelog"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Changelog — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Resources</div>
+<h1>Changelog</h1>
+<p class="docs-lead">
+    Notable changes to Vaultex, in reverse chronological order. We follow semantic versioning &mdash;
+    breaking changes only land in major releases.
+</p>
+
+<h2 id="v1-2">v1.2 &middot; May 2026</h2>
+<ul>
+    <li><strong>New</strong> &mdash; Token revocation endpoint at <code>/connect/revocation</code>.</li>
+    <li><strong>New</strong> &mdash; Per-tenant branding on the sign-in page.</li>
+    <li><strong>Improved</strong> &mdash; Refresh token rotation now revokes the entire chain on detected reuse.</li>
+    <li><strong>Fixed</strong> &mdash; Consent screen no longer loops on first sign-in for newly registered users.</li>
+</ul>
+
+<h2 id="v1-1">v1.1 &middot; March 2026</h2>
+<ul>
+    <li><strong>New</strong> &mdash; Multi-language sign-in UI (English, Vietnamese).</li>
+    <li><strong>New</strong> &mdash; Light/dark theme on auth pages, persisted via cookie.</li>
+    <li><strong>Improved</strong> &mdash; PKCE is now required for every client type, including confidential.</li>
+</ul>
+
+<h2 id="v1-0">v1.0 &middot; January 2026</h2>
+<ul>
+    <li>First general-availability release.</li>
+    <li>OpenID Connect provider with authorization code flow and PKCE.</li>
+    <li>Multi-tenant user management with tenant-scoped roles.</li>
+    <li>Admin portal for users, roles, policies, and audit logs.</li>
+    <li>Platform admin for managing tenants.</li>
+</ul>
+
+<div class="docs-pager">
+    <a href="/docs/errors" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Error reference</div>
+    </a>
+    <a href="/docs/support" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Support →</div>
+    </a>
+</div>

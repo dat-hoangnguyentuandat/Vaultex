@@ -1,0 +1,36 @@
+@inherits LayoutComponentBase
+@inject ThemeService Theme
+@inject I18nService I18n
+@implements IDisposable
+
+@Body
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.OnChange += StateHasChanged;
+        I18n.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitAsync();
+            await I18n.InitAsync();
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Theme.OnChange -= StateHasChanged;
+        I18n.OnChange -= StateHasChanged;
+    }
+}

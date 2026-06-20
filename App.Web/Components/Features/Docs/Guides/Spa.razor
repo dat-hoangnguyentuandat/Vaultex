@@ -1,0 +1,126 @@
+@page "/docs/guides/spa"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>SPA integration — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Integration guide</div>
+<h1>Single-page apps</h1>
+<p class="docs-lead">
+    Add Vaultex to a React, Vue, or Angular app. Browser-based clients use the OAuth 2.0
+    Authorization Code flow with PKCE &mdash; no client secret involved.
+</p>
+
+<h2 id="register">1. Register a public client</h2>
+<p>In the Vaultex admin portal, create a client with type <strong>SPA</strong>:</p>
+<ul>
+    <li>Client type: <code>Public</code></li>
+    <li>Redirect URI: <code>https://yourapp.com/callback</code> (and <code>http://localhost:5173/callback</code> for dev)</li>
+    <li>Allowed scopes: <code>openid profile email roles</code></li>
+</ul>
+
+<h2 id="react">2. React with <code>react-oidc-context</code></h2>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Bash</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>npm install oidc-client-ts react-oidc-context</code></pre>
+</div>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">tsx</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>// main.tsx
+import { AuthProvider } from "react-oidc-context";
+import { WebStorageStateStore } from "oidc-client-ts";
+
+const oidcConfig = {
+  authority:    "https://auth.vaultex.io",
+  client_id:    "your-spa-client-id",
+  redirect_uri: window.location.origin + "/callback",
+  post_logout_redirect_uri: window.location.origin,
+  response_type: "code",
+  scope:         "openid profile email roles offline_access",
+  userStore:     new WebStorageStateStore({ store: window.localStorage }),
+};
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  &lt;AuthProvider {...oidcConfig}&gt;
+    &lt;App /&gt;
+  &lt;/AuthProvider&gt;
+);</code></pre>
+</div>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">tsx</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>// App.tsx
+import { useAuth } from "react-oidc-context";
+
+export default function App() {
+  const auth = useAuth();
+
+  if (auth.isLoading)         return &lt;p&gt;Loading...&lt;/p&gt;;
+  if (auth.error)             return &lt;p&gt;Error: {auth.error.message}&lt;/p&gt;;
+  if (!auth.isAuthenticated)  return &lt;button onClick={() =&gt; auth.signinRedirect()}&gt;Sign in&lt;/button&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Hello {auth.user?.profile.name}&lt;/p&gt;
+      &lt;button onClick={() =&gt; auth.signoutRedirect()}&gt;Sign out&lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+</div>
+
+<h2 id="api-calls">3. Calling your API</h2>
+<p>Attach the access token to outgoing requests:</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">ts</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>const res = await fetch("/api/orders", {
+  headers: { Authorization: `Bearer ${auth.user?.access_token}` },
+});</code></pre>
+</div>
+
+<h2 id="callback">4. Callback page</h2>
+<p>Add a route that the OIDC library uses to finish the sign-in:</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">tsx</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>// /callback route — the library handles parsing automatically
+&lt;Route path="/callback" element={&lt;p&gt;Signing you in...&lt;/p&gt;} /&gt;</code></pre>
+</div>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">No client secret in browser code</div>
+        <p>SPAs are public clients. Never embed a client secret &mdash; PKCE is what protects you. If you find yourself adding a secret, you've configured a confidential client by mistake.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/guides/dotnet" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← ASP.NET Core</div>
+    </a>
+    <a href="/docs/guides/node" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Node.js →</div>
+    </a>
+</div>

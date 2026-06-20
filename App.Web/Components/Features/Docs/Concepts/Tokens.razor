@@ -1,0 +1,118 @@
+@page "/docs/concepts/tokens"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Tokens — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Concepts</div>
+<h1>Tokens</h1>
+<p class="docs-lead">
+    Vaultex issues three kinds of tokens. Each has a job, a lifetime, and rules about where it can
+    travel. This page explains what's inside, how to validate them, and when to ask for new ones.
+</p>
+
+<h2 id="three-tokens">The three tokens</h2>
+<table>
+    <thead><tr><th>Token</th><th>Format</th><th>Audience</th><th>Lifetime</th></tr></thead>
+    <tbody>
+        <tr><td>ID token</td><td>JWT</td><td>Your client app</td><td>1 hour</td></tr>
+        <tr><td>Access token</td><td>JWT</td><td>Your APIs</td><td>1 hour</td></tr>
+        <tr><td>Refresh token</td><td>Opaque</td><td>Vaultex only</td><td>14 days, rotates on use</td></tr>
+    </tbody>
+</table>
+
+<h2 id="id-token">ID token</h2>
+<p>
+    The ID token is how Vaultex tells your app who the user is. It's a signed JWT with claims
+    describing the user. Your client validates the signature and reads the claims &mdash; that's it.
+    ID tokens never travel to your APIs.
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON (decoded payload)</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "iss":   "https://auth.vaultex.io",
+  "aud":   "your-client-id",
+  "sub":   "f3a7d2c9-...",
+  "name":  "Sarah Chen",
+  "email": "sarah@example.com",
+  "tid":   "acme",
+  "iat":   1715900400,
+  "exp":   1715904000,
+  "nonce": "n-0S6_..."
+}</code></pre>
+</div>
+
+<h2 id="access-token">Access token</h2>
+<p>
+    The access token is what your app sends to your APIs. It's a JWT signed by Vaultex with claims
+    about <em>what the user is allowed to do</em>: roles, scopes, tenant. Your APIs validate it on
+    every request.
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>GET /api/orders HTTP/1.1
+Host: api.yourapp.com
+Authorization: Bearer eyJhbGciOiJSUzI1NiIs...</code></pre>
+</div>
+
+<h2 id="refresh-token">Refresh token</h2>
+<p>
+    Refresh tokens let your backend exchange one expired session for a new one without bothering
+    the user. They're long-lived and powerful, so treat them like passwords:
+</p>
+<ul>
+    <li>Store on the server, never in the browser.</li>
+    <li>Send only to <code>/connect/token</code> with <code>grant_type=refresh_token</code>.</li>
+    <li>Vaultex returns a <em>new</em> refresh token each time &mdash; the old one becomes invalid.</li>
+</ul>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Refresh-token rotation</div>
+        <p>If a leaked refresh token is reused after rotation, Vaultex revokes the entire token chain. Your user is logged out, which is exactly the right outcome.</p>
+    </div>
+</div>
+
+<h2 id="validate">Validating an access token</h2>
+<p>API services should validate every incoming access token. Modern frameworks do this for you:</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">C#</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", o =&gt;
+    {
+        o.Authority = "https://auth.vaultex.io";
+        o.Audience  = "your-api-resource";
+        o.TokenValidationParameters.ValidateIssuer = true;
+    });</code></pre>
+</div>
+
+<p>
+    The library fetches Vaultex's public signing keys from the JWKS endpoint and caches them. Every
+    incoming request is verified against those keys.
+</p>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/oauth-flow" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← OAuth 2.0 + PKCE</div>
+    </a>
+    <a href="/docs/concepts/scopes-claims" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Scopes &amp; claims →</div>
+    </a>
+</div>

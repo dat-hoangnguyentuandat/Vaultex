@@ -11,13 +11,55 @@ namespace App.Infrastructure.Data
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
-            var db = serviceProvider.GetRequiredService<AppDbContext>();
+            var platformDb = serviceProvider.GetRequiredService<PlatformDbContext>();
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
             var logger = serviceProvider.GetRequiredService<ILogger<AppDbContext>>();
+            var provisioning = serviceProvider.GetRequiredService<App.Infrastructure.Services.TenantProvisioningService>();
+            var connectionFactory = serviceProvider.GetRequiredService<App.Infrastructure.Tenancy.TenantConnectionStringFactory>();
+
+            // Seed platform-level role (no tenant)
+            var platformRoleName = Roles.PlatformAdmin;
+            if (await roleManager.FindByNameAsync(platformRoleName) is null)
+            {
+                await roleManager.CreateAsync(new AppRole
+                {
+                    Name = platformRoleName,
+                    NormalizedName = platformRoleName.ToUpperInvariant(),
+                    TenantId = null
+                });
+            }
+
+            // Seed platform admin user (no tenant)
+            var platformAdminEmail = "platform@vaultex.io";
+            if (await userManager.FindByEmailAsync(platformAdminEmail) is null)
+            {
+                var platformAdmin = new User
+                {
+                    UserName = platformAdminEmail,
+                    Email = platformAdminEmail,
+                    FullName = "Platform Administrator",
+                    TenantId = null,
+                    IsActive = true,
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(platformAdmin, "Platform@123456");
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(platformAdmin, platformRoleName);
+                    logger.LogInformation("Seeded platform admin: {Email}", platformAdminEmail);
+                }
+                else
+                {
+                    logger.LogError("Failed to seed platform admin: {Errors}",
+                        string.Join(", ", result.Errors.Select(e => e.Description)));
+                }
+            }
 
             // Seed dev tenant
             var subdomain = "acme";
-            var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Subdomain == subdomain);
+            var tenant = await platformDb.Tenants.FirstOrDefaultAsync(t => t.Subdomain == subdomain);
 
             if (tenant is null)
             {
@@ -27,44 +69,27 @@ namespace App.Infrastructure.Data
                     Subdomain = subdomain,
                     Region = "Southeast Asia",
                     Status = TenantStatus.Active,
+                    DatabaseName = connectionFactory.NormalizeDatabaseName($"vaultex_{subdomain}"),
+                    ConnectionString = connectionFactory.BuildForNewTenant(subdomain),
                     Configuration = new TenantConfiguration()
                 };
-                db.Tenants.Add(tenant);
-                await db.SaveChangesAsync();
+                platformDb.Tenants.Add(tenant);
+                await platformDb.SaveChangesAsync();
                 logger.LogInformation("Seeded tenant: {Subdomain} ({TenantId})", subdomain, tenant.Id);
             }
 
-            // Seed roles for this tenant
-            await RoleSeeder.SeedRolesAsync(serviceProvider, tenant.Id);
+            await provisioning.ProvisionTenantDatabaseAsync(tenant);
 
-            // Seed super admin user
+            // Seed tenant admin user
             var adminEmail = "admin@acme.com";
-            var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
-
-            if (existingAdmin is null)
+            try
             {
-                var admin = new User
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    FullName = "Acme Super Admin",
-                    TenantId = tenant.Id,
-                    IsActive = true,
-                    EmailConfirmed = true
-                };
-
-                var result = await userManager.CreateAsync(admin, "Admin@123456");
-                if (result.Succeeded)
-                {
-                    var adminRoleName = $"{tenant.Id}:{Roles.Admin}";
-                    await userManager.AddToRoleAsync(admin, adminRoleName);
-                    logger.LogInformation("Seeded super admin: {Email}", adminEmail);
-                }
-                else
-                {
-                    logger.LogError("Failed to seed admin user: {Errors}",
-                        string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
+                await provisioning.CreateTenantAdminAsync(tenant.Id, adminEmail, "Admin@123456", "Acme Super Admin");
+                logger.LogInformation("Seeded tenant admin: {Email}", adminEmail);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Email already", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogInformation("Tenant admin already exists: {Email}", adminEmail);
             }
         }
     }

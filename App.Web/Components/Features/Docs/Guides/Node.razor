@@ -1,0 +1,130 @@
+@page "/docs/guides/node"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Node.js integration — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Integration guide</div>
+<h1>Node.js backend</h1>
+<p class="docs-lead">
+    Add Vaultex sign-in to an Express, Fastify, or Koa server using the official
+    <code>openid-client</code> library.
+</p>
+
+<h2 id="install">1. Install</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Bash</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>npm install openid-client express express-session</code></pre>
+</div>
+
+<h2 id="setup">2. Discover and configure</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>import express from "express";
+import session from "express-session";
+import { Issuer, generators } from "openid-client";
+
+const issuer = await Issuer.discover("https://auth.vaultex.io");
+const client = new issuer.Client({
+  client_id:     process.env.VAULTEX_CLIENT_ID,
+  client_secret: process.env.VAULTEX_CLIENT_SECRET,
+  redirect_uris: ["http://localhost:3000/callback"],
+  response_types: ["code"],
+});
+
+const app = express();
+app.use(session({ secret: process.env.SESSION_SECRET, resave: false, saveUninitialized: false }));</code></pre>
+</div>
+
+<h2 id="login">3. Login route</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>app.get("/login", (req, res) =&gt; {
+  const verifier  = generators.codeVerifier();
+  const challenge = generators.codeChallenge(verifier);
+  const state     = generators.state();
+
+  req.session.pkce  = { verifier, state };
+  res.redirect(client.authorizationUrl({
+    scope: "openid profile email offline_access",
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  }));
+});</code></pre>
+</div>
+
+<h2 id="callback">4. Callback route</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>app.get("/callback", async (req, res) =&gt; {
+  const params = client.callbackParams(req);
+  const tokens = await client.callback(
+    "http://localhost:3000/callback",
+    params,
+    { state: req.session.pkce.state, code_verifier: req.session.pkce.verifier }
+  );
+
+  req.session.user = tokens.claims();
+  req.session.tokens = tokens;
+  res.redirect("/");
+});</code></pre>
+</div>
+
+<h2 id="protect">5. Protect routes</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>function requireAuth(req, res, next) {
+  if (!req.session.user) return res.redirect("/login");
+  next();
+}
+
+app.get("/me", requireAuth, (req, res) =&gt; res.json(req.session.user));</code></pre>
+</div>
+
+<h2 id="api-validate">Validating tokens in an API</h2>
+<p>If your Node service is an API receiving bearer tokens from a client, validate them with <code>jose</code>:</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const JWKS = createRemoteJWKSet(new URL("https://auth.vaultex.io/.well-known/jwks"));
+
+export async function verifyToken(token) {
+  const { payload } = await jwtVerify(token, JWKS, {
+    issuer: "https://auth.vaultex.io",
+    audience: "your-api-resource",
+  });
+  return payload;
+}</code></pre>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/guides/spa" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← SPA</div>
+    </a>
+    <a href="/docs/guides/mobile" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Mobile →</div>
+    </a>
+</div>

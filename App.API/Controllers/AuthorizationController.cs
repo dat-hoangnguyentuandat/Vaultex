@@ -26,7 +26,6 @@ public class AuthorizationController : ControllerBase
     private readonly IOpenIddictAuthorizationManager _authorizationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly IOpenIddictTokenManager _tokenManager;
-    private readonly ILogger<AuthorizationController> _logger;
     private readonly AuditLogService _auditLog;
     private readonly ITenantContext _tenantContext;
     private readonly TokenBlacklistService _blacklist;
@@ -38,7 +37,6 @@ public class AuthorizationController : ControllerBase
         IOpenIddictAuthorizationManager authorizationManager,
         IOpenIddictScopeManager scopeManager,
         IOpenIddictTokenManager tokenManager,
-        ILogger<AuthorizationController> logger,
         AuditLogService auditLog,
         ITenantContext tenantContext,
         TokenBlacklistService blacklist)
@@ -49,7 +47,6 @@ public class AuthorizationController : ControllerBase
         _authorizationManager = authorizationManager;
         _scopeManager = scopeManager;
         _tokenManager = tokenManager;
-        _logger = logger;
         _auditLog = auditLog;
         _tenantContext = tenantContext;
         _blacklist = blacklist;
@@ -119,11 +116,6 @@ public class AuthorizationController : ControllerBase
         return identity;
     }
 
-    // Được gọi sau khi Login.cshtml.cs xác thực thành công và redirect về đây.
-    // Tạo authorization_code (mã ủy quyền tạm thời, sống 5 phút, dùng 1 lần)
-    // rồi redirect về App.Web kèm code trong URL:
-    //   https://localhost:7066/signin-oidc?code=<authorization_code>
-    // App.Web sẽ nhận code này và gọi Exchange() bên dưới để đổi lấy token thật.
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     [IgnoreAntiforgeryToken]
@@ -132,18 +124,28 @@ public class AuthorizationController : ControllerBase
         var request = HttpContext.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
-        var result = await HttpContext.AuthenticateAsync();
+        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
         if (result is not { Succeeded: true })
         {
-            return Challenge(new AuthenticationProperties
-            {
-                RedirectUri = Request.PathBase + Request.Path + QueryString.Create(
-                    Request.HasFormContentType ? Request.Form : Request.Query)
-            });
+            return Challenge(
+                new AuthenticationProperties
+                {
+                    RedirectUri = Request.PathBase + Request.Path + QueryString.Create(
+                        Request.HasFormContentType ? Request.Form : Request.Query)
+                },
+                IdentityConstants.ApplicationScheme);
         }
 
         var user = await _userManager.GetUserAsync(result.Principal)
             ?? throw new InvalidOperationException("The user details cannot be retrieved.");
+
+        if (!user.IsActive)
+        {
+            return Challenge(new AuthenticationProperties
+            {
+                RedirectUri = "/account/login?error=inactive"
+            });
+        }
 
         var application = await _applicationManager.FindByClientIdAsync(request.ClientId!)
             ?? throw new InvalidOperationException("The application cannot be found.");
@@ -159,6 +161,35 @@ public class AuthorizationController : ControllerBase
             authorizationList.Add(item);
         }
 
+        // For explicit-consent clients (third-party apps), show consent screen unless
+        // the user has already granted permanent authorization for these scopes.
+        var consentType = await _applicationManager.GetConsentTypeAsync(application);
+        if (consentType == ConsentTypes.Explicit && authorizationList.Count == 0)
+        {
+            var consent = Request.HasFormContentType
+                ? Request.Form["consent"].FirstOrDefault()
+                : null;
+
+            if (consent == "deny")
+            {
+                await _auditLog.LogAsync(AuditEventTypes.ConsentDenied, user.TenantId, user.Id,
+                    resourceType: "OidcClient", resourceId: request.ClientId,
+                    newValue: string.Join(" ", request.GetScopes()));
+                return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
+
+            if (consent != "allow")
+            {
+                // Redirect to consent page, carrying all original OIDC params as query string.
+                var qs = Request.HasFormContentType
+                    ? QueryString.Create(Request.Form
+                        .Where(f => f.Key != "consent")
+                        .Select(f => new KeyValuePair<string, string?>(f.Key, f.Value.ToString())))
+                    : Request.QueryString;
+                return Redirect("/connect/consent" + qs);
+            }
+        }
+
         var identity = await BuildIdentityAsync(user);
 
         identity.SetClaim(Claims.Subject, await _userManager.GetUserIdAsync(user))
@@ -172,12 +203,23 @@ public class AuthorizationController : ControllerBase
         identity.SetResources(resources);
 
         var authorization = authorizationList.LastOrDefault();
+        var isNewGrant = authorization is null;
         authorization ??= await _authorizationManager.CreateAsync(
             identity: identity,
             subject: await _userManager.GetUserIdAsync(user),
             client: (await _applicationManager.GetIdAsync(application))!,
             type: AuthorizationTypes.Permanent,
             scopes: identity.GetScopes());
+
+        if (isNewGrant && consentType == ConsentTypes.Explicit)
+        {
+            await _auditLog.LogAsync(AuditEventTypes.ConsentGranted, user.TenantId, user.Id,
+                resourceType: "OidcClient", resourceId: request.ClientId,
+                newValue: string.Join(" ", request.GetScopes()));
+        }
+
+        await _auditLog.LogAsync(AuditEventTypes.TokenIssued, user.TenantId, user.Id,
+            resourceType: "OidcClient", resourceId: request.ClientId);
 
         identity.SetAuthorizationId(await _authorizationManager.GetIdAsync(authorization));
         identity.SetDestinations(GetDestinations);
@@ -223,6 +265,12 @@ public class AuthorizationController : ControllerBase
             }
 
             var checkResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password!, lockoutOnFailure: true);
+
+            if (checkResult.IsNotAllowed)
+            {
+                await _auditLog.LogAsync(AuditEventTypes.LoginFailed, user.TenantId, user.Id);
+                return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            }
 
             if (!checkResult.Succeeded)
             {
@@ -357,10 +405,6 @@ public class AuthorizationController : ControllerBase
         }
 
         await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-
-        _logger.LogInformation(
-            "[AUDIT] LOGOUT | UserId={UserId} | Username={Username}",
-            userId ?? "unknown", username);
 
         return SignOut(
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,

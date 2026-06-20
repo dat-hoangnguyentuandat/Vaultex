@@ -2,13 +2,18 @@
 bin/
 obj/
 .claude/
-claude_code_project
 
 *.user
 *.suo
+
+App.Test/
+
+App.Tests/
 
 node_modules/
 
 wwwroot/lib/
 
 appsettings.Development.json
+
+.env

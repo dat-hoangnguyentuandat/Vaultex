@@ -174,6 +174,8 @@ namespace App.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("Products");
                 });
 

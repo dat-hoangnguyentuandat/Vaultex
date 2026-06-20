@@ -17,24 +17,42 @@ namespace App.API.Controllers
                Policy = "UserManage")]
     public class AdminController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly TenantDbContext _db;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly ITenantContext _tenantContext;
         private readonly AuditLogService _auditLog;
+        private readonly PlatformUserDirectoryService _directory;
 
         public AdminController(
-            AppDbContext db,
+            TenantDbContext db,
             UserManager<User> userManager,
             RoleManager<AppRole> roleManager,
             ITenantContext tenantContext,
-            AuditLogService auditLog)
+            AuditLogService auditLog,
+            PlatformUserDirectoryService directory)
         {
             _db = db;
             _userManager = userManager;
             _roleManager = roleManager;
             _tenantContext = tenantContext;
             _auditLog = auditLog;
+            _directory = directory;
+        }
+
+        // ── Tenant ────────────────────────────────────────────────────────
+
+        [HttpGet("tenant")]
+        public async Task<IActionResult> GetCurrentTenant()
+        {
+            if (!_tenantContext.TenantId.HasValue) return BadRequest("Tenant not resolved.");
+
+            var tenant = await _db.Tenants.AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == _tenantContext.TenantId.Value);
+
+            if (tenant is null) return NotFound();
+
+            return Ok(new { tenant.Id, tenant.Name, tenant.Subdomain, tenant.Region, tenant.Status });
         }
 
         // ── Users ──────────────────────────────────────────────────────────
@@ -114,6 +132,8 @@ namespace App.API.Controllers
             await _auditLog.LogAsync(AuditEventTypes.UserCreated, _tenantContext.TenantId, user.Id,
                 resourceType: "User", resourceId: user.Id.ToString());
 
+            await _directory.UpsertAsync(_tenantContext.TenantId.Value, user.Email!, user.Id, user.IsActive);
+
             return Ok(new { user.Id, user.Email });
         }
 
@@ -127,6 +147,10 @@ namespace App.API.Controllers
 
             user.IsActive = active;
             await _db.SaveChangesAsync();
+
+            await _auditLog.LogAsync(AuditEventTypes.UserStatusChanged, _tenantContext.TenantId, user.Id,
+                resourceType: "User", resourceId: user.Id.ToString(),
+                oldValue: (!active).ToString(), newValue: active.ToString());
 
             return Ok(new { user.Id, user.IsActive });
         }
@@ -173,6 +197,24 @@ namespace App.API.Controllers
             return Ok();
         }
 
+        [HttpDelete("users/{id:guid}")]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            if (!_tenantContext.TenantId.HasValue) return BadRequest("Tenant not resolved.");
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id && u.TenantId == _tenantContext.TenantId.Value);
+            if (user is null) return NotFound();
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors.Select(e => e.Description));
+
+            await _auditLog.LogAsync(AuditEventTypes.UserDeleted, _tenantContext.TenantId, user.Id,
+                resourceType: "User", resourceId: user.Id.ToString());
+
+            return NoContent();
+        }
+
         // ── Roles ──────────────────────────────────────────────────────────
 
         [HttpGet("roles")]
@@ -206,6 +248,9 @@ namespace App.API.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors.Select(e => e.Description));
 
+            await _auditLog.LogAsync(AuditEventTypes.RoleChanged, _tenantContext.TenantId,
+                resourceType: "Role", resourceId: role.Id.ToString(), newValue: req.Name);
+
             return Ok(new { role.Id, req.Name });
         }
 
@@ -219,7 +264,12 @@ namespace App.API.Controllers
 
             if (role is null) return NotFound();
 
+            var shortName = role.Name != null && role.Name.Contains(':') ? role.Name.Split(':')[1] : role.Name;
             await _roleManager.DeleteAsync(role);
+
+            await _auditLog.LogAsync(AuditEventTypes.RoleChanged, _tenantContext.TenantId,
+                resourceType: "Role", resourceId: id.ToString(), oldValue: shortName);
+
             return NoContent();
         }
 
@@ -312,6 +362,10 @@ namespace App.API.Controllers
 
             _db.Policies.Remove(policy);
             await _db.SaveChangesAsync();
+
+            await _auditLog.LogAsync(AuditEventTypes.PolicyChanged, _tenantContext.TenantId,
+                resourceType: "Policy", resourceId: id.ToString(), oldValue: policy.Name);
+
             return NoContent();
         }
     }

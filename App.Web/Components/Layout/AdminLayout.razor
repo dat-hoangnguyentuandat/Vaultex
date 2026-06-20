@@ -1,20 +1,35 @@
 @inherits LayoutComponentBase
+@inject ThemeService Theme
+@inject I18nService I18n
+@implements IDisposable
 
-<div class="page">
-    <div class="sidebar">
+<div class="admin-shell">
+    <aside class="admin-sidebar">
         <AdminNavMenu />
-    </div>
+    </aside>
 
-    <main>
-        <div class="top-row px-4">
-            <span class="text-muted">Admin Dashboard</span>
-            <a href="/api/auth/logout" class="ms-3">Logout</a>
-        </div>
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <span class="admin-topbar-title">@I18n.T("nav.admin")</span>
+            </div>
+            <div class="admin-topbar-right">
+                <ThemeToggle />
+                <LangPicker />
+                <a href="/welcome" class="admin-topbar-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    Console
+                </a>
+                <a href="/api/auth/logout" class="admin-topbar-logout">@I18n.T("common.signOut")</a>
+            </div>
+        </header>
 
-        <article class="content px-4">
+        <main class="admin-content">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
 </div>
 
 <div id="blazor-error-ui">
@@ -22,3 +37,27 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.OnChange += StateHasChanged;
+        I18n.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitAsync();
+            await I18n.InitAsync();
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Theme.OnChange -= StateHasChanged;
+        I18n.OnChange -= StateHasChanged;
+    }
+}

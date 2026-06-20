@@ -1,25 +1,28 @@
 using App.Application.DTOs;
-using App.Domain.Entities;
+using App.Application.Interfaces;
+using App.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace App.API.Pages.Account;
 
 public class RegisterModel : PageModel
 {
-    private readonly UserManager<User> _userManager;
-    private readonly ILogger<RegisterModel> _logger;
+    private readonly IAuthService _authService;
+    private readonly ITenantContext _tenantContext;
 
-    public RegisterModel(UserManager<User> userManager, ILogger<RegisterModel> logger)
+    public RegisterModel(IAuthService authService, ITenantContext tenantContext)
     {
-        _userManager = userManager;
-        _logger = logger;
+        _authService = authService;
+        _tenantContext = tenantContext;
     }
 
     public int Step { get; private set; } = 1;
     public bool ShowSuccess { get; private set; }
     public List<string> ServerErrors { get; private set; } = [];
+    public string? ReturnUrl { get; private set; }
 
     public RegisterDto Info { get; set; } = new();
     public RegisterPasswordDto Pwd { get; set; } = new();
@@ -56,7 +59,7 @@ public class RegisterModel : PageModel
     public static string EyeClosedSvgJs => EyeClosedSvg.Replace("'", "\\'");
     public static string EyeOpenSvgJs => EyeOpenSvg.Replace("'", "\\'");
 
-    public IActionResult OnGet(int step = 1)
+    public IActionResult OnGet(int step = 1, string? returnUrl = null)
     {
         if (step == 2)
         {
@@ -67,10 +70,11 @@ public class RegisterModel : PageModel
             RestoreInfoFromTempData();
             Step = 2;
         }
+        ReturnUrl = returnUrl ?? TempData.Peek("reg_returnUrl") as string;
         return Page();
     }
 
-    public IActionResult OnPostInfo()
+    public IActionResult OnPostInfo(string? returnUrl = null)
     {
         BindInfo();
         TryValidateModel(Info, nameof(Info));
@@ -82,6 +86,7 @@ public class RegisterModel : PageModel
         if (!ModelState.IsValid)
         {
             Step = 1;
+            ReturnUrl = returnUrl;
             return Page();
         }
 
@@ -91,11 +96,14 @@ public class RegisterModel : PageModel
         TempData["reg_dob"] = Info.DateOfBirth?.ToString("yyyy-MM-dd");
         TempData["reg_co"] = Info.Company;
         TempData["reg_pos"] = Info.Position;
+        if (!string.IsNullOrEmpty(returnUrl))
+            TempData["reg_returnUrl"] = returnUrl;
 
-        return RedirectToPage(new { step = 2 });
+        return RedirectToPage(new { step = 2, returnUrl });
     }
 
-    public async Task<IActionResult> OnPostRegisterAsync()
+    [EnableRateLimiting("RegistrationSubmit")]
+    public async Task<IActionResult> OnPostRegisterAsync(string? returnUrl = null)
     {
         var email = TempData["reg_email"] as string;
 
@@ -105,11 +113,9 @@ public class RegisterModel : PageModel
         BindPwd();
         TryValidateModel(Pwd, nameof(Pwd));
 
-        var errors = ModelState.Where(x => x.Value?.Errors.Count > 0)
-                               .Select(x => $"{x.Key}: {x.Value!.Errors[0].ErrorMessage}")
-                               .ToList();
-
         TempData.Keep();
+
+        ReturnUrl = returnUrl ?? TempData.Peek("reg_returnUrl") as string;
 
         if (!ModelState.IsValid)
         {
@@ -118,41 +124,37 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        var user = new User
+        var registerDto = new RegisterDto
         {
-            UserName = email,
             Email = email,
-            PhoneNumber = TempData["reg_phone"] as string,
-            FullName = TempData["reg_name"] as string,
-            Company = TempData["reg_co"] as string,
-            Position = TempData["reg_pos"] as string,
-            DateOfBirth = DateOnly.TryParse(TempData["reg_dob"] as string, out var dob) ? dob : null,
-            EmailConfirmed = false,
+            PhoneNumber = TempData.Peek("reg_phone") as string ?? string.Empty,
+            Fullname = TempData.Peek("reg_name") as string,
+            Company = TempData.Peek("reg_co") as string,
+            Position = TempData.Peek("reg_pos") as string,
+            DateOfBirth = DateOnly.TryParse(TempData.Peek("reg_dob") as string, out var dob) ? dob : null,
         };
 
-        var result = await _userManager.CreateAsync(user, Pwd.Password);
-
-        if (result.Succeeded)
+        var passwordDto = new RegisterPasswordDto
         {
-            _logger.LogInformation(
-                "[AUDIT] REGISTER | UserId={UserId} | Email={Email}",
-                user.Id.ToString(), user.Email);
+            Password = Pwd.Password,
+            ConfirmPassword = Pwd.ConfirmPassword
+        };
+
+        try
+        {
+            await _authService.RegisterAsync(registerDto, passwordDto, _tenantContext.TenantId);
 
             ShowSuccess = true;
             Step = 2;
             return Page();
         }
-
-        foreach (var error in result.Errors)
-            ServerErrors.Add(TranslateError(error));
-
-        _logger.LogWarning(
-            "[AUDIT] SECURITY | Event=REGISTER_FAILED | Email={Email} | Errors={Errors}",
-            email, string.Join(", ", result.Errors.Select(e => e.Code)));
-
-        Step = 2;
-        RestoreInfoFromTempData();
-        return Page();
+        catch (Exception ex)
+        {
+            ServerErrors.Add(ex.Message);
+            Step = 2;
+            RestoreInfoFromTempData();
+            return Page();
+        }
     }
 
     private void RestoreInfoFromTempData()

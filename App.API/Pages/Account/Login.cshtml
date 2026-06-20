@@ -10,7 +10,7 @@
 </div>
 
 <div class="auth-card">
-    <h1 class="auth-card-title">ĐĂNG NHẬP</h1>
+    <h1 class="auth-card-title" data-i18n="login.title">ĐĂNG NHẬP</h1>
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
@@ -20,7 +20,7 @@
         </div>
     }
 
-    <form method="post" asp-route-returnUrl="@Model.ReturnUrl" autocomplete="off">
+    <form method="post" id="login-form" asp-route-returnUrl="@Model.ReturnUrl" asp-route-tenant="@Model.Tenant" autocomplete="off">
         <div asp-validation-summary="None" class="auth-alert-error" style="display:@(ViewData.ModelState.IsValid ? "none" : "flex")">
             <span class="auth-alert-icon">⚠</span>
             <span class="auth-alert-text">
@@ -28,25 +28,35 @@
             </span>
         </div>
 
-        @* ── Email ── *@
         <div class="auth-field">
-            <label asp-for="Input.Email">Email <span class="required-star">*</span></label>
+            <label for="account-type">Loại tài khoản</label>
+            <div class="auth-select-wrapper">
+                <select id="account-type" name="accountType" class="auth-input auth-select">
+                    <option value="platform" selected="@(string.IsNullOrEmpty(Model.Tenant) ? "selected" : null)">Platform</option>
+                    <option value="tenant" selected="@(!string.IsNullOrEmpty(Model.Tenant) ? "selected" : null)">Tenant account</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="auth-field">
+            <label asp-for="Input.Email" data-i18n="login.email">Email <span class="required-star">*</span></label>
             <input asp-for="Input.Email"
                    class="auth-input @(ViewData.ModelState["Input.Email"]?.Errors.Count > 0 ? "input-error" : "")"
                    placeholder="Nhập email"
+                   data-i18n-placeholder="login.email.placeholder"
                    autocomplete="email"
                    type="email" />
             <span asp-validation-for="Input.Email" class="auth-error-msg"></span>
         </div>
 
-        @* ── Mật khẩu ── *@
         <div class="auth-field">
-            <label asp-for="Input.Password">Mật khẩu <span class="required-star">*</span></label>
+            <label asp-for="Input.Password" data-i18n="login.password">Mật khẩu <span class="required-star">*</span></label>
             <div class="auth-input-password-wrapper">
                 <input asp-for="Input.Password"
                        id="password-field"
                        class="auth-input @(ViewData.ModelState["Input.Password"]?.Errors.Count > 0 ? "input-error" : "")"
                        placeholder="Nhập mật khẩu"
+                       data-i18n-placeholder="login.password.placeholder"
                        autocomplete="current-password"
                        type="password" />
                 <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1">
@@ -61,18 +71,16 @@
             <span asp-validation-for="Input.Password" class="auth-error-msg"></span>
         </div>
 
-        @* ── Remember me + Quên mật khẩu ── *@
         <div class="auth-remember-row">
             <label class="auth-checkbox-label">
                 <input asp-for="Input.RememberMe" class="auth-checkbox" type="checkbox" />
-                <span>Ghi nhớ đăng nhập</span>
+                <span data-i18n="login.remember">Ghi nhớ đăng nhập</span>
             </label>
-            <a href="/account/forgot-password" class="auth-forgot-link">Quên mật khẩu?</a>
+            <a href="/account/forgot-password" class="auth-forgot-link" data-i18n="login.forgot">Quên mật khẩu?</a>
         </div>
 
-        @* ── Submit ── *@
         <div style="margin-top: 24px;">
-            <button type="submit" class="btn-auth-primary" id="submit-btn">
+            <button type="submit" class="btn-auth-primary" id="submit-btn" data-i18n="login.submit">
                 Đăng nhập
             </button>
         </div>
@@ -80,8 +88,15 @@
 
     <div class="auth-login-footer">
         <div class="auth-footer-link">
-            Chưa có tài khoản? <a href="/account/register">Đăng ký</a>
+            <span data-i18n="login.no_account">Chưa có tài khoản?</span>
+            <a href="/account/register@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" data-i18n="login.register">Đăng ký</a>
         </div>
+        @if (Model.EmailNotConfirmed)
+        {
+            <div class="auth-footer-link" style="margin-top:8px;">
+                <a href="/account/resend-confirmation" data-i18n="login.resend">Gửi lại email xác nhận</a>
+            </div>
+        }
     </div>
 </div>
 
@@ -102,9 +117,24 @@
                 <line x1="1" y1="1" x2="23" y2="23"/>`;
         }
     }
-    document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('login-form').addEventListener('submit', function() {
+        this.action = window.location.pathname + window.location.search;
         const btn = document.getElementById('submit-btn');
         btn.disabled = true;
-        btn.innerHTML = '<span class="btn-spinner"></span>Đang đăng nhập...';
+        btn.innerHTML = '<span class="btn-spinner"></span><span data-i18n="login.signing_in">Đang đăng nhập...</span>';
     });
+
+    const accountType = document.getElementById('account-type');
+
+    function updateLoginUrl(type) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tenant');
+        window.history.replaceState({}, '', url);
+    }
+
+    function setAccountType(type) {
+        updateLoginUrl(type);
+    }
+
+    accountType.addEventListener('change', () => setAccountType(accountType.value));
 </script>

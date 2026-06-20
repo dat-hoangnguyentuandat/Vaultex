@@ -3,6 +3,7 @@ using App.Infrastructure.Data;
 using App.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace App.Tests;
@@ -23,7 +24,7 @@ public class AuditLogServiceTests : IDisposable
 
         _httpAccessor = new Mock<IHttpContextAccessor>();
 
-        _svc = new AuditLogService(_db, _httpAccessor.Object);
+        _svc = new AuditLogService(_db, _httpAccessor.Object, new Mock<ILogger<AuditLogService>>().Object);
     }
 
     public void Dispose() => _db.Dispose();

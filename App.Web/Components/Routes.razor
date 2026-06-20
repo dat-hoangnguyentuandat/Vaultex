@@ -3,10 +3,15 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
                 <NotAuthorized>
-                    @* Trang yêu cầu login nhưng chưa đăng nhập — Blazor sẽ trigger redirect *@
+                    @{
+                        var returnUrl = new Uri(NavigationManager.Uri).PathAndQuery;
+                        NavigationManager.NavigateTo($"api/auth/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+                    }
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
         </Found>
     </Router>
 </CascadingAuthenticationState>
+
+@inject NavigationManager NavigationManager

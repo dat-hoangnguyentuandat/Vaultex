@@ -1,7 +1,7 @@
-using App.API.Controllers;
 using App.Application.DTOs;
 using App.Application.Interfaces;
 using App.Domain.Entities;
+using App.Domain.Exceptions;
 using App.Infrastructure.Services;
 using App.Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Authorization;
@@ -16,42 +16,40 @@ namespace App.API.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly ILogger<AuthController> _logger;
         private readonly IAuthService _authService;
         private readonly ITenantContext _tenantContext;
+        private readonly UserManager<User> _userManager;
+        private readonly AuditLogService _auditLog;
 
         public AuthController(
-            ILogger<AuthController> logger,
             IAuthService authService,
-            ITenantContext tenantContext)
+            ITenantContext tenantContext,
+            UserManager<User> userManager,
+            AuditLogService auditLog)
         {
-            _logger = logger;
             _authService = authService;
             _tenantContext = tenantContext;
+            _userManager = userManager;
+            _auditLog = auditLog;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
-            var result = await _authService.RegisterAsync(request.Info, request.Password, _tenantContext.TenantId);
-
-            _logger.LogInformation(
-                "[AUDIT] REGISTER | Email={Email} | TenantId={TenantId}",
-                result.Email, _tenantContext.TenantId?.ToString() ?? "none");
-
-            return Ok(result);
+            try
+            {
+                var result = await _authService.RegisterAsync(request.Info, request.Password, _tenantContext.TenantId);
+                return Ok(result);
+            }
+            catch (ConflictException ex) { return Conflict(new { error = ex.Message }); }
+            catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
         {
             await _authService.ForgotPasswordAsync(forgotPasswordDto);
-
-            _logger.LogInformation(
-                "[AUDIT] PASSWORD_RESET_REQUESTED | Email={Email}",
-                forgotPasswordDto.Email);
-
-            return Ok("Nếu email tồn tại, link reset đã được gửi");
+            return Ok("If the email exists, a reset link has been sent.");
         }
 
         [HttpPost("reset-password")]
@@ -60,13 +58,13 @@ namespace App.API.Controllers
             [FromQuery] string token,
             [FromBody] ResetPasswordDto resetPasswordDto)
         {
-            await _authService.ResetPasswordAsync(email, token, resetPasswordDto);
-
-            _logger.LogWarning(
-                "[AUDIT] SECURITY | Event=PASSWORD_RESET_SUCCESS | Email={Email} | Description=Password was successfully reset via API.",
-                email);
-
-            return Ok("Đặt lại mật khẩu thành công");
+            try
+            {
+                await _authService.ResetPasswordAsync(email, token, resetPasswordDto);
+                return Ok("Password reset successful.");
+            }
+            catch (NotFoundException ex) { return NotFound(new { error = ex.Message }); }
+            catch (Exception ex) { return BadRequest(new { error = ex.Message }); }
         }
 
         [HttpGet("permissions")]
@@ -82,5 +80,79 @@ namespace App.API.Controllers
                 permissions = permissions
             });
         }
+
+        [HttpGet("profile")]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
+            var user = userId is not null ? await _userManager.FindByIdAsync(userId) : null;
+            if (user is null) return Unauthorized();
+
+            return Ok(new
+            {
+                user.Id, user.Email, user.FullName, user.PhoneNumber,
+                user.DateOfBirth, user.Company, user.Position,
+                user.CreatedAt, user.LastLoginAt
+            });
+        }
+
+        [HttpPut("profile")]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest req)
+        {
+            var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
+            var user = userId is not null ? await _userManager.FindByIdAsync(userId) : null;
+            if (user is null) return Unauthorized();
+
+            user.FullName = req.FullName ?? user.FullName;
+            user.PhoneNumber = req.PhoneNumber ?? user.PhoneNumber;
+            user.DateOfBirth = req.DateOfBirth ?? user.DateOfBirth;
+            user.Company = req.Company ?? user.Company;
+            user.Position = req.Position ?? user.Position;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors.Select(e => e.Description));
+
+            await _auditLog.LogAsync(AuditEventTypes.ProfileUpdated, _tenantContext.TenantId, user.Id,
+                resourceType: "User", resourceId: user.Id.ToString());
+
+            return Ok(new { user.Id, user.Email, user.FullName });
+        }
+
+        [HttpPost("resend-confirmation")]
+        public async Task<IActionResult> ResendConfirmation([FromBody] ForgotPasswordDto dto)
+        {
+            await _authService.SendEmailConfirmationAsync(dto.Email);
+            return Ok("If the email exists and is unconfirmed, a confirmation link has been resent.");
+        }
+
+        [HttpPost("change-password")]
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
+        {
+            var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
+            var user = userId is not null ? await _userManager.FindByIdAsync(userId) : null;
+            if (user is null) return Unauthorized();
+
+            var result = await _userManager.ChangePasswordAsync(user, req.CurrentPassword, req.NewPassword);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors.Select(e => e.Description));
+
+            await _auditLog.LogAsync(AuditEventTypes.PasswordChanged, _tenantContext.TenantId, user.Id,
+                resourceType: "User", resourceId: user.Id.ToString());
+
+            return Ok();
+        }
     }
+
+    public record UpdateProfileRequest(
+        string? FullName,
+        string? PhoneNumber,
+        DateOnly? DateOfBirth,
+        string? Company,
+        string? Position);
+
+    public record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 }

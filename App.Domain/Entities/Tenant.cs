@@ -6,6 +6,8 @@ namespace App.Domain.Entities
         public string Name { get; set; } = "";
         public string Subdomain { get; set; } = "";
         public string Region { get; set; } = "";
+        public string? ConnectionString { get; set; }
+        public string? DatabaseName { get; set; }
         public TenantStatus Status { get; set; } = TenantStatus.Active;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

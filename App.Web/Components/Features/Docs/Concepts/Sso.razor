@@ -1,0 +1,65 @@
+@page "/docs/concepts/sso"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Single sign-on — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Concepts</div>
+<h1>Single sign-on</h1>
+<p class="docs-lead">
+    Once a user signs in to one app via Vaultex, they're signed in to every other app on the same
+    Vaultex authority. Here's how that works and how to control it.
+</p>
+
+<h2 id="how">How SSO works</h2>
+<p>
+    When a user authenticates, Vaultex sets a session cookie on its own domain (<code>auth.vaultex.io</code>).
+    The next time any client redirects to <code>/connect/authorize</code>, Vaultex sees the cookie,
+    skips the login UI, and returns an authorization code immediately.
+</p>
+<p>
+    This is intentional and correct. SSO is the whole reason customers adopt an identity provider.
+    From the user's perspective, they sign in once per browser session and every subsequent app
+    "just works."
+</p>
+
+<h2 id="prompt">Forcing re-authentication</h2>
+<p>
+    If you need to force a fresh sign-in (high-value transaction, step-up auth), pass
+    <code>prompt=login</code> on the authorize request:
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">URL</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>/connect/authorize?...&amp;prompt=login</code></pre>
+</div>
+
+<h2 id="logout">Single logout</h2>
+<p>
+    Calling <code>/connect/logout</code> ends the user's Vaultex session. They'll be prompted to
+    sign in again the next time any app redirects to <code>/connect/authorize</code>.
+</p>
+
+<div class="docs-callout docs-callout--warn">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">App sessions are separate</div>
+        <p>Logging out of Vaultex doesn't automatically clear your app's local session cookie. Your app should also clear its own session as part of its logout flow.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/concepts/tenants-roles" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Tenants &amp; roles</div>
+    </a>
+    <a href="/docs/guides/dotnet" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">ASP.NET Core guide →</div>
+    </a>
+</div>

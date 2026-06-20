@@ -29,14 +29,15 @@ namespace App.Infrastructure.Data
 
             foreach (var (_, appSettings) in settings.Applications)
             {
-                if (await manager.FindByClientIdAsync(appSettings.ClientId) is not null)
-                    continue;
-
                 var descriptor = new OpenIddictApplicationDescriptor
                 {
                     ClientId = appSettings.ClientId,
                     ClientSecret = appSettings.ClientSecret,
+                    ClientType = string.IsNullOrEmpty(appSettings.ClientSecret)
+                        ? OpenIddictConstants.ClientTypes.Public
+                        : OpenIddictConstants.ClientTypes.Confidential,
                     DisplayName = appSettings.DisplayName,
+                    ConsentType = appSettings.ConsentType,
                 };
 
                 foreach (var uri in appSettings.RedirectUris)
@@ -51,7 +52,11 @@ namespace App.Infrastructure.Data
                 foreach (var requirement in appSettings.Requirements)
                     descriptor.Requirements.Add(requirement);
 
-                await manager.CreateAsync(descriptor);
+                var existing = await manager.FindByClientIdAsync(appSettings.ClientId);
+                if (existing is null)
+                    await manager.CreateAsync(descriptor);
+                else
+                    await manager.UpdateAsync(existing, descriptor);
             }
         }
     }

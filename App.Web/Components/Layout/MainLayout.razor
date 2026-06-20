@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@inject ThemeService Theme
+@inject I18nService I18n
+@implements IDisposable
 
 <div class="page">
     <div class="sidebar">
@@ -7,7 +10,9 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <ThemeToggle />
+            <LangPicker />
+            <a href="/api/auth/logout">@I18n.T("common.signOut")</a>
         </div>
 
         <article class="content px-4">
@@ -21,3 +26,27 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.OnChange += StateHasChanged;
+        I18n.OnChange += StateHasChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Theme.InitAsync();
+            await I18n.InitAsync();
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        Theme.OnChange -= StateHasChanged;
+        I18n.OnChange -= StateHasChanged;
+    }
+}

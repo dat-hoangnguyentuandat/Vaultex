@@ -1,0 +1,161 @@
+@page "/docs/concepts/oauth-flow"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>OAuth 2.0 + PKCE — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Concepts</div>
+<h1>OAuth 2.0 + PKCE</h1>
+<p class="docs-lead">
+    The exact protocol Vaultex uses to authenticate users and issue tokens. This page walks through
+    every step of the Authorization Code flow with PKCE, including the request and response shapes.
+</p>
+
+<h2 id="why-pkce">Why PKCE?</h2>
+<p>
+    The classic OAuth 2.0 Authorization Code flow assumes the client has a secret it can use to
+    prove its identity when exchanging a code for tokens. That works for backends, but a SPA or
+    mobile app can't keep a secret &mdash; anyone can read the JavaScript or decompile the binary.
+</p>
+<p>
+    <strong>PKCE</strong> (Proof Key for Code Exchange) replaces the static secret with a one-time
+    challenge generated for each sign-in. The client invents a random string (the <em>verifier</em>),
+    hashes it (the <em>challenge</em>), and sends only the hash with the initial request. When it
+    later exchanges the code for tokens, it sends the original verifier. Vaultex hashes it and
+    compares &mdash; if they match, the request is legit.
+</p>
+<p>
+    Vaultex requires PKCE for <em>all</em> clients, including confidential ones. There's no downside
+    to defense in depth.
+</p>
+
+<h2 id="step-by-step">The flow, step by step</h2>
+
+<h3>1. Generate a code verifier and challenge</h3>
+<p>The client picks 43&ndash;128 random characters and SHA-256 hashes them.</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JavaScript</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>const verifier  = base64url(crypto.getRandomValues(new Uint8Array(32)));
+const challenge = base64url(await sha256(verifier));
+sessionStorage.setItem("pkce_verifier", verifier);</code></pre>
+</div>
+
+<h3>2. Send the user to the authorize endpoint</h3>
+<p>Redirect the browser to Vaultex with the challenge attached.</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--get">GET</span>
+    <span>/connect/authorize</span>
+</div>
+
+<table>
+    <thead><tr><th>Parameter</th><th>Required</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><code>response_type</code></td><td>Yes</td><td>Always <code>code</code>.</td></tr>
+        <tr><td><code>client_id</code></td><td>Yes</td><td>The <code>client_id</code> you registered.</td></tr>
+        <tr><td><code>redirect_uri</code></td><td>Yes</td><td>Must exactly match a registered redirect URI.</td></tr>
+        <tr><td><code>scope</code></td><td>Yes</td><td>Space-separated list. <code>openid</code> is required.</td></tr>
+        <tr><td><code>state</code></td><td>Yes</td><td>Opaque value you'll get back unchanged. CSRF protection.</td></tr>
+        <tr><td><code>code_challenge</code></td><td>Yes</td><td>Base64URL-encoded SHA-256 of the verifier.</td></tr>
+        <tr><td><code>code_challenge_method</code></td><td>Yes</td><td>Always <code>S256</code>.</td></tr>
+        <tr><td><code>nonce</code></td><td>Recommended</td><td>Random value bound to the ID token. Replay protection.</td></tr>
+    </tbody>
+</table>
+
+<h3>3. User signs in</h3>
+<p>
+    Vaultex shows the sign-in screen. Once the user authenticates (and consents, for first-time
+    third-party clients), Vaultex redirects the browser back to your <code>redirect_uri</code>:
+</p>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>302 Found
+Location: https://yourapp.com/callback?code=Abc123...&amp;state=xyz</code></pre>
+</div>
+
+<h3>4. Exchange the code for tokens</h3>
+<p>The client posts back to the token endpoint with the verifier.</p>
+
+<div class="docs-endpoint">
+    <span class="docs-method docs-method--post">POST</span>
+    <span>/connect/token</span>
+</div>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">HTTP</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>POST /connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&amp;code=Abc123...
+&amp;redirect_uri=https://yourapp.com/callback
+&amp;client_id=your-client-id
+&amp;code_verifier=&lt;the original verifier&gt;</code></pre>
+</div>
+
+<h3>5. Receive the tokens</h3>
+
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">JSON</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>{
+  "access_token":  "eyJhbGciOi...",
+  "id_token":      "eyJhbGciOi...",
+  "refresh_token": "RT_8a3f...",
+  "token_type":    "Bearer",
+  "expires_in":    3600,
+  "scope":         "openid profile email offline_access"
+}</code></pre>
+</div>
+
+<h2 id="diagram">Visual reference</h2>
+<div class="docs-codeblock">
+    <div class="docs-codeblock-header">
+        <span class="docs-codeblock-lang">Sequence</span>
+        <button class="docs-codeblock-copy" onclick="vxCopy(this)">Copy</button>
+    </div>
+<pre><code>User              Your app              Vaultex
+ │                  │                     │
+ │── click sign in ▶│                     │
+ │                  │── /authorize ─────▶ │
+ │◄──── login UI ───┼─────────────────────│
+ │── credentials ──┼──────────────────── ▶│
+ │                  │◄── 302 + code ──────│
+ │                  │── POST /token ────▶ │
+ │                  │◄── access + id ─────│
+ │◄── you're in ────│                     │</code></pre>
+</div>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">Your SDK does all of this for you</div>
+        <p>You almost never write this by hand. The OIDC libraries we recommend implement the entire flow, including PKCE, state, and nonce validation. This page is here so you understand what your SDK is doing.</p>
+    </div>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/authentication" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Authentication basics</div>
+    </a>
+    <a href="/docs/concepts/tokens" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">Tokens →</div>
+    </a>
+</div>

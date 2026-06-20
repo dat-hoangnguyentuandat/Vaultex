@@ -13,6 +13,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "5433:5432"
 
   redis:
     image: redis:7-alpine
@@ -32,12 +34,30 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=vaultex;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      ConnectionStrings__PlatformConnection: "Host=postgres;Port=5432;Database=vaultex_platform;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      ConnectionStrings__DefaultTenantConnection: "Host=postgres;Port=5432;Database=vaultex_identity;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      Tenancy__ConnectionTemplate: "Host=postgres;Port=5432;Database=vaultex_template;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
       ConnectionStrings__Redis: "redis:6379"
       OpenIddict__TokenLifetimes__AccessTokenSeconds: "3600"
       OpenIddict__TokenLifetimes__RefreshTokenDays: "30"
       OpenIddict__TokenLifetimes__AuthorizationCodeMinutes: "5"
+      OpenIddict__Certificates__EncryptionCertPath: "${OPENIDDICT_ENCRYPTION_CERT_PATH:-}"
+      OpenIddict__Certificates__SigningCertPath: "${OPENIDDICT_SIGNING_CERT_PATH:-}"
+      OpenIddict__Certificates__Password: "${OPENIDDICT_CERT_PASSWORD:-}"
+      App__BaseUrl: "${APP_BASE_URL:-http://localhost:7108}"
+      Email__From: "${EMAIL_FROM:-noreply@vaultex.io}"
+      Email__Smtp__Host: "${SMTP_HOST:-}"
+      Email__Smtp__Port: "${SMTP_PORT:-587}"
+      Email__Smtp__Username: "${SMTP_USERNAME:-}"
+      Email__Smtp__Password: "${SMTP_PASSWORD:-}"
     ports:
       - "7108:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,8 +81,15 @@ services:
       ApiClient__BaseUrl: "http://app-api:8080"
     ports:
       - "7066:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
-      - app-api
+      app-api:
+        condition: service_healthy
 
 volumes:
   postgres_data:

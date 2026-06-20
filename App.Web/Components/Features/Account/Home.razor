@@ -1,0 +1,107 @@
+@page "/welcome"
+@layout CleanLayout
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>Vaultex</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="home-wrapper">
+            <header class="home-topbar">
+                <a href="/" class="home-topbar-brand">
+                    <div class="home-topbar-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                    </div>
+                    <span>Vaultex</span>
+                    <span class="home-topbar-tag">Console</span>
+                </a>
+                <div class="home-topbar-actions">
+                    <ThemeToggle />
+                    <LangPicker />
+                </div>
+            </header>
+
+            <section class="home-hero">
+                <div class="home-eyebrow">@I18n.T("home.welcome")</div>
+                <h1 class="home-title">
+                    Hello, <em>@(GetFirstName(context.User.Identity?.Name))</em>
+                </h1>
+                <p class="home-sub">Manage your account, configure access, and review activity across your tenant.</p>
+            </section>
+
+            <section class="home-cards">
+                <a href="/profile" class="home-card">
+                    <div class="home-card-icon home-card-icon--blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                        </svg>
+                    </div>
+                    <div class="home-card-body">
+                        <div class="home-card-title">@I18n.T("nav.profile")</div>
+                        <div class="home-card-desc">@I18n.T("home.profileDesc")</div>
+                    </div>
+                    <div class="home-card-arrow">→</div>
+                </a>
+
+                <AuthorizeView Roles="Admin,Manager,PlatformAdmin" Context="adminCtx">
+                    <Authorized>
+                        <a href="/admin" class="home-card">
+                            <div class="home-card-icon home-card-icon--purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                                </svg>
+                            </div>
+                            <div class="home-card-body">
+                                <div class="home-card-title">@I18n.T("nav.admin")</div>
+                                <div class="home-card-desc">@I18n.T("home.adminDesc")</div>
+                            </div>
+                            <div class="home-card-arrow">→</div>
+                        </a>
+                    </Authorized>
+                </AuthorizeView>
+            </section>
+
+            <div class="home-footer-actions">
+                <a href="api/auth/logout" class="home-logout-btn">@I18n.T("common.signOut")</a>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="google-landing">
+            <div class="google-landing-card">
+                <div class="google-landing-header">
+                    <div class="google-landing-logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#1a73e8">
+                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                        </svg>
+                    </div>
+                    <h1 class="google-landing-title">Vaultex</h1>
+                    <p class="google-landing-subtitle">@I18n.T("home.signIn")</p>
+                </div>
+
+                <div class="google-landing-actions">
+                    <a href="api/auth/login?returnUrl=%2Fwelcome" class="google-signin-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        @I18n.T("home.signIn")
+                    </a>
+                </div>
+            </div>
+
+            <div class="google-landing-footer">
+                <LangPicker />
+                <ThemeToggle />
+                <a href="/docs">Docs</a>
+                <a href="#">@I18n.T("footer.privacy")</a>
+                <a href="#">@I18n.T("footer.terms")</a>
+                <a href="#">@I18n.T("footer.help")</a>
+            </div>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>

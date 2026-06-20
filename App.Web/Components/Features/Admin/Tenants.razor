@@ -1,0 +1,155 @@
+@page "/admin/tenants"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "PlatformAdmin")]
+@rendermode InteractiveServer
+
+<PageTitle>Tenants — Vaultex Admin</PageTitle>
+
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Tenants</div>
+        <div class="apage-subtitle">Manage all tenants on this platform</div>
+    </div>
+    <button class="abtn abtn--primary" @onclick="() => showCreate = true">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New Tenant
+    </button>
+</div>
+
+<div class="acard">
+    <div class="acard-toolbar">
+        <div class="asearch-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="asearch-input" placeholder="Search name or subdomain..."
+                   @bind="search" @bind:event="oninput" @onkeyup="LoadTenants" />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="atable-loading"><div class="atable-spinner"></div></div>
+    }
+    else if (tenants.Count == 0)
+    {
+        <div class="atable-empty">No tenants found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable">
+                <thead>
+                    <tr>
+                        <th>Tenant</th>
+                        <th>Region</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Users</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in tenants)
+                    {
+                        <tr>
+                            <td>
+                                <div class="afont-medium">@t.Name</div>
+                                <div class="atext-muted"><code class="acode">@t.Subdomain</code></div>
+                            </td>
+                            <td class="atext-muted">@t.Region</td>
+                            <td>
+                                <span class="abadge @TenantBadgeClass(t.Status)">@t.Status</span>
+                            </td>
+                            <td class="atext-muted">@t.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="atext-muted">@(t.UserCount?.ToString() ?? "—")</td>
+                            <td>
+                                <div class="arow-actions">
+                                    <button class="abtn-ghost" @onclick="() => OpenEdit(t)">Edit</button>
+                                    <button class="abtn-ghost" @onclick="() => OpenCreateAdmin(t)">+ Admin</button>
+                                    @if (t.Status == "Active")
+                                    {
+                                        <button class="abtn-ghost abtn-ghost--warning" @onclick="() => SuspendTenant(t)">Suspend</button>
+                                    }
+                                    else if (t.Status == "Suspended")
+                                    {
+                                        <button class="abtn-ghost abtn-ghost--success" @onclick="() => ActivateTenant(t)">Activate</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="apagination">
+            <button class="abtn-page" disabled="@(currentPage <= 1)" @onclick="PrevPage">‹ Prev</button>
+            <span class="apagination-info">Page @(currentPage) of @(totalPages)</span>
+            <button class="abtn-page" disabled="@(currentPage >= totalPages)" @onclick="NextPage">Next ›</button>
+        </div>
+    }
+</div>
+
+@if (showCreate)
+{
+    <div class="amodal-overlay" @onclick="() => showCreate = false">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Create Tenant</div>
+                <button class="amodal-close" @onclick="() => showCreate = false">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Name</label><input class="aform-input" @bind="newName" placeholder="Acme Corp" /></div>
+                <div class="aform-field"><label class="aform-label">Subdomain</label><input class="aform-input" @bind="newSubdomain" placeholder="acme" /></div>
+                <div class="aform-field"><label class="aform-label">Region</label><input class="aform-input" @bind="newRegion" placeholder="us-east-1" /></div>
+                @if (!string.IsNullOrEmpty(createError)) { <div class="aform-error">@createError</div> }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => showCreate = false">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="CreateTenant">Create</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (editTenant is not null)
+{
+    <div class="amodal-overlay" @onclick="() => editTenant = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Edit — @editTenant.Subdomain</div>
+                <button class="amodal-close" @onclick="() => editTenant = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Name</label><input class="aform-input" @bind="editName" /></div>
+                <div class="aform-field"><label class="aform-label">Region</label><input class="aform-input" @bind="editRegion" /></div>
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => editTenant = null">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="SaveEdit">Save</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (adminTenant is not null)
+{
+    <div class="amodal-overlay" @onclick="() => adminTenant = null">
+        <div class="amodal" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">Create Admin — @adminTenant.Name</div>
+                <button class="amodal-close" @onclick="() => adminTenant = null">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-field"><label class="aform-label">Email</label><input class="aform-input" @bind="adminEmail" placeholder="admin@example.com" /></div>
+                <div class="aform-field"><label class="aform-label">Full Name</label><input class="aform-input" @bind="adminFullName" /></div>
+                <div class="aform-field"><label class="aform-label">Password</label><input class="aform-input" type="password" @bind="adminPassword" placeholder="••••••••" /></div>
+                @if (!string.IsNullOrEmpty(adminError)) { <div class="aform-error">@adminError</div> }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="() => adminTenant = null">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="CreateAdmin">Create</button>
+            </div>
+        </div>
+    </div>
+}

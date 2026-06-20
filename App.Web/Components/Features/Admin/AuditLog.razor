@@ -1,0 +1,96 @@
+@page "/admin/audit"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,PlatformAdmin")]
+@rendermode InteractiveServer
+
+<PageTitle>Audit Log — Vaultex Admin</PageTitle>
+
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Audit Log</div>
+        <div class="apage-subtitle">@total total events</div>
+    </div>
+</div>
+
+<div class="acard">
+    <div class="acard-toolbar acard-toolbar--wrap">
+        <div class="asearch-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input class="asearch-input" placeholder="Event type..." @bind="filterEvent" @bind:event="oninput" />
+        </div>
+        <input class="aform-input aform-input--sm" type="date" @bind="filterFrom" />
+        <input class="aform-input aform-input--sm" type="date" @bind="filterTo" />
+        <button class="abtn abtn--outline" @onclick="LoadLogs">Search</button>
+    </div>
+
+    @if (loading)
+    {
+        <div class="atable-loading"><div class="atable-spinner"></div></div>
+    }
+    else if (logs.Count == 0)
+    {
+        <div class="atable-empty">No audit events found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable atable--mono">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Event</th>
+                        <th>User</th>
+                        <th>Resource</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in logs)
+                    {
+                        <tr class="@(selected?.Id == e.Id ? "atable-row--selected" : "")"
+                            @onclick="() => selected = selected?.Id == e.Id ? null : e"
+                            style="cursor:pointer">
+                            <td class="atext-muted">@e.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            <td><span class="abadge @AuditBadgeClass(e.EventType)">@e.EventType</span></td>
+                            <td class="atext-truncate">@(e.UserId?.ToString()[..8] ?? "—")…</td>
+                            <td class="atext-muted">@e.ResourceType @e.ResourceId</td>
+                            <td class="atext-muted">@e.IpAddress</td>
+                        </tr>
+                        @if (selected?.Id == e.Id)
+                        {
+                            <tr class="atable-detail-row">
+                                <td colspan="5">
+                                    <div class="aevent-detail">
+                                        <div class="aevent-detail-grid">
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">ID</span><span>@e.Id</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Tenant</span><span>@(e.TenantId?.ToString() ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">User</span><span>@(e.UserId?.ToString() ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">IP</span><span>@(e.IpAddress ?? "—")</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Resource</span><span>@e.ResourceType / @e.ResourceId</span></div>
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Timestamp</span><span>@e.Timestamp.ToString("o")</span></div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(e.OldValue))
+                                        {
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">Old Value</span><code class="acode">@e.OldValue</code></div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(e.NewValue))
+                                        {
+                                            <div class="aevent-detail-item"><span class="aevent-detail-key">New Value</span><code class="acode">@e.NewValue</code></div>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="apagination">
+            <button class="abtn-page" disabled="@(page <= 1)" @onclick="PrevPage">‹ Prev</button>
+            <span class="apagination-info">Page @(page) of @(totalPages)</span>
+            <button class="abtn-page" disabled="@(page >= totalPages)" @onclick="NextPage">Next ›</button>
+        </div>
+    }
+</div>

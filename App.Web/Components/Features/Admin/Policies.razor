@@ -1,0 +1,119 @@
+@page "/admin/policies"
+@layout AdminLayout
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,PlatformAdmin")]
+@rendermode InteractiveServer
+
+<PageTitle>Policies — Vaultex Admin</PageTitle>
+
+<div class="apage-header">
+    <div>
+        <div class="apage-title">Policies</div>
+        <div class="apage-subtitle">@policies.Count access control policy(ies)</div>
+    </div>
+    <button class="abtn abtn--primary" @onclick="OpenCreate">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        New Policy
+    </button>
+</div>
+
+<div class="acard">
+    @if (loading)
+    {
+        <div class="atable-loading"><div class="atable-spinner"></div></div>
+    }
+    else if (policies.Count == 0)
+    {
+        <div class="atable-empty">No policies found.</div>
+    }
+    else
+    {
+        <div class="atable-wrap">
+            <table class="atable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Resource</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in policies)
+                    {
+                        <tr>
+                            <td class="afont-medium">@p.Name</td>
+                            <td><code class="acode">@p.Resource</code></td>
+                            <td><code class="acode">@p.Action</code></td>
+                            <td>
+                                <span class="abadge @(p.IsActive ? "abadge--green" : "abadge--gray")">
+                                    @(p.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>
+                                <div class="arow-actions">
+                                    <button class="abtn-ghost" @onclick="() => OpenEdit(p)">Edit</button>
+                                    <button class="abtn-ghost abtn-ghost--danger" @onclick="() => DeletePolicy(p.Id)">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@if (showForm)
+{
+    <div class="amodal-overlay" @onclick="CloseForm">
+        <div class="amodal amodal--lg" @onclick:stopPropagation>
+            <div class="amodal-header">
+                <div class="amodal-title">@(editId.HasValue ? "Edit Policy" : "Create Policy")</div>
+                <button class="amodal-close" @onclick="CloseForm">✕</button>
+            </div>
+            <div class="amodal-body">
+                <div class="aform-grid">
+                    <div class="aform-field aform-field--span2">
+                        <label class="aform-label">Name</label>
+                        <input class="aform-input" @bind="form.Name" placeholder="e.g. Allow managers to read reports" />
+                    </div>
+                    <div class="aform-field">
+                        <label class="aform-label">Resource</label>
+                        <input class="aform-input" @bind="form.Resource" placeholder="product" />
+                    </div>
+                    <div class="aform-field">
+                        <label class="aform-label">Action</label>
+                        <input class="aform-input" @bind="form.Action" placeholder="create" />
+                    </div>
+                </div>
+                <div class="aform-field">
+                    <label class="aform-label">Conditions (JSON)</label>
+                    <textarea class="aform-input aform-textarea" rows="5" @bind="form.ConditionsJson"
+                              placeholder='[{"type":"owner_only"},{"type":"time_range","value":"09:00-17:00"}]'></textarea>
+                    <div class="aform-hint">
+                        Types: <code class="acode">tenant_match</code>, <code class="acode">owner_only</code>,
+                        <code class="acode">time_range</code> (value: "HH:mm-HH:mm"),
+                        <code class="acode">ip_whitelist</code> (value: "1.2.3.4,10.0.0.0/8")
+                    </div>
+                </div>
+                @if (editId.HasValue)
+                {
+                    <label class="acheck-label">
+                        <input type="checkbox" class="acheck-input" @bind="form.IsActive" />
+                        Active
+                    </label>
+                }
+                @if (!string.IsNullOrEmpty(formError))
+                {
+                    <div class="aform-error">@formError</div>
+                }
+            </div>
+            <div class="amodal-footer">
+                <button class="abtn abtn--ghost" @onclick="CloseForm">Cancel</button>
+                <button class="abtn abtn--primary" @onclick="SavePolicy">Save</button>
+            </div>
+        </div>
+    </div>
+}

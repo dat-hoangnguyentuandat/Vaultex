@@ -4,12 +4,14 @@ namespace App.Infrastructure.Tenancy
     {
         public Guid? TenantId { get; private set; }
         public string? Subdomain { get; private set; }
+        public string? ConnectionString { get; private set; }
         public bool IsResolved { get; private set; }
 
-        public void Set(Guid tenantId, string subdomain)
+        public void Set(Guid tenantId, string subdomain, string connectionString)
         {
             TenantId = tenantId;
             Subdomain = subdomain;
+            ConnectionString = connectionString;
             IsResolved = true;
         }
     }

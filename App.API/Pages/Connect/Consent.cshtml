@@ -1,0 +1,128 @@
+@page "/connect/consent"
+@model App.API.Pages.Connect.ConsentModel
+@{
+    ViewData["Title"] = "Cấp quyền truy cập";
+}
+
+<div class="auth-logo">
+    <img src="/favicon.png" alt="logo" />
+    <span class="auth-logo-text">Vaultex</span>
+</div>
+
+<div class="auth-card">
+    <h1 class="auth-card-title">CẤP QUYỀN TRUY CẬP</h1>
+
+    <div class="consent-app-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" class="consent-app-icon">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <path d="M9 9h6M9 12h6M9 15h4"/>
+        </svg>
+        <span class="consent-app-name">@Model.ApplicationName</span>
+    </div>
+
+    <p class="auth-desc-p">
+        Ứng dụng <strong>@Model.ApplicationName</strong> yêu cầu quyền truy cập vào tài khoản của bạn với các quyền sau:
+    </p>
+
+    @if (Model.RequestedScopes.Count > 0)
+    {
+        <ul class="consent-scope-list">
+            @foreach (var scope in Model.RequestedScopes)
+            {
+                <li class="consent-scope-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round" class="consent-scope-check">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>@scope.DisplayName</span>
+                </li>
+            }
+        </ul>
+    }
+
+    <p class="consent-warning">
+        Chỉ cho phép nếu bạn tin tưởng ứng dụng này. Bạn có thể thu hồi quyền truy cập bất kỳ lúc nào.
+    </p>
+
+    <form method="post" action="/connect/authorize" id="consent-form">
+        @foreach (var param in Model.OidcParams)
+        {
+            <input type="hidden" name="@param.Key" value="@param.Value" />
+        }
+        <input type="hidden" name="consent" id="consent-hidden" value="" />
+        <div class="auth-btn-row">
+            <button type="button" onclick="submitConsent('deny')" class="btn-auth-outline" id="deny-btn">
+                Từ chối
+            </button>
+            <button type="button" onclick="submitConsent('allow')" class="btn-auth-primary" id="allow-btn">
+                Cho phép
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .consent-app-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--auth-focus-ring);
+        border: 1.5px solid var(--auth-accent);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+    }
+    .consent-app-icon {
+        color: var(--auth-accent);
+        flex-shrink: 0;
+    }
+    .consent-app-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--auth-accent);
+    }
+    .consent-scope-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 20px;
+        border: 1.5px solid var(--auth-border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .consent-scope-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        color: var(--auth-text);
+        border-bottom: 1px solid var(--auth-border);
+    }
+    .consent-scope-item:last-child {
+        border-bottom: none;
+    }
+    .consent-scope-check {
+        color: #22c55e;
+        flex-shrink: 0;
+    }
+    .consent-warning {
+        font-size: 0.8rem;
+        color: var(--auth-text-muted);
+        margin-bottom: 4px;
+    }
+</style>
+
+<script>
+    function submitConsent(value) {
+        const allowBtn = document.getElementById('allow-btn');
+        const denyBtn = document.getElementById('deny-btn');
+        document.getElementById('consent-hidden').value = value;
+        allowBtn.disabled = true;
+        denyBtn.disabled = true;
+        if (value === 'allow') {
+            allowBtn.innerHTML = '<span class="btn-spinner"></span>Đang xử lý...';
+        }
+        document.getElementById('consent-form').submit();
+    }
+</script>

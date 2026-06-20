@@ -12,58 +12,64 @@
 @if (Model.Step == 1)
 {
     <div class="auth-card">
-        <h1 class="auth-card-title">ĐĂNG KÝ</h1>
+        <h1 class="auth-card-title" data-i18n="register.title">ĐĂNG KÝ</h1>
 
-        <form method="post" asp-page-handler="Info" autocomplete="off" novalidate onsubmit="console.log('FORM STEP 1 SUBMITTING!'); return true;">
+        <form method="post" asp-page-handler="Info" asp-route-returnUrl="@Model.ReturnUrl" autocomplete="off" novalidate>
             <div class="auth-row-2col">
                 <div class="auth-field">
-                    <label>Email <span class="required-star">*</span></label>
-                    <input asp-for="Info.Email" class="auth-input" placeholder="Nhập email" />
+                    <label data-i18n="register.email">Email <span class="required-star">*</span></label>
+                    <input asp-for="Info.Email" class="auth-input" placeholder="Nhập email"
+                           data-i18n-placeholder="register.email.placeholder" />
                     <span asp-validation-for="Info.Email" class="auth-validation"></span>
                 </div>
                 <div class="auth-field">
-                    <label>Số điện thoại <span class="required-star">*</span></label>
-                    <input asp-for="Info.PhoneNumber" class="auth-input" placeholder="Nhập số điện thoại" />
+                    <label data-i18n="register.phone">Số điện thoại <span class="required-star">*</span></label>
+                    <input asp-for="Info.PhoneNumber" class="auth-input" placeholder="Nhập số điện thoại"
+                           data-i18n-placeholder="register.phone.placeholder" />
                     <span asp-validation-for="Info.PhoneNumber" class="auth-validation"></span>
                 </div>
             </div>
 
             <div class="auth-field">
-                <label>Họ và Tên</label>
-                <input asp-for="Info.Fullname" class="auth-input" placeholder="Nhập họ và tên" />
+                <label data-i18n="register.fullname">Họ và Tên</label>
+                <input asp-for="Info.Fullname" class="auth-input" placeholder="Nhập họ và tên"
+                       data-i18n-placeholder="register.fullname.placeholder" />
             </div>
 
             <div class="auth-field">
-                <label>Ngày sinh</label>
+                <label data-i18n="register.dob">Ngày sinh</label>
                 <input asp-for="Info.DateOfBirth" type="date" class="auth-input" />
             </div>
 
             <div class="auth-field">
-                <label>Công ty</label>
-                <input asp-for="Info.Company" class="auth-input" placeholder="Nhập tên công ty" />
+                <label data-i18n="register.company">Công ty</label>
+                <input asp-for="Info.Company" class="auth-input" placeholder="Nhập tên công ty"
+                       data-i18n-placeholder="register.company.placeholder" />
             </div>
 
             <div class="auth-field">
-                <label>Chức vụ</label>
-                <input asp-for="Info.Position" class="auth-input" placeholder="Nhập chức vụ" />
+                <label data-i18n="register.position">Chức vụ</label>
+                <input asp-for="Info.Position" class="auth-input" placeholder="Nhập chức vụ"
+                       data-i18n-placeholder="register.position.placeholder" />
             </div>
 
             <div style="margin-top: 24px;">
-                <button type="submit" class="btn-auth-primary">Tiếp tục</button>
+                <button type="submit" class="btn-auth-primary" data-i18n="register.next">Tiếp tục</button>
             </div>
         </form>
 
         <div class="auth-footer-link">
-            Bạn đã có tài khoản? <a href="/account/login">Đăng nhập</a>
+            <span data-i18n="register.have_account">Bạn đã có tài khoản?</span>
+            <a href="/account/login" data-i18n="register.login">Đăng nhập</a>
         </div>
     </div>
 }
 else
 {
     <div class="auth-card">
-        <h1 class="auth-card-title">TẠO MẬT KHẨU</h1>
+        <h1 class="auth-card-title" data-i18n="register.pwd.title">TẠO MẬT KHẨU</h1>
 
-        <form method="post" asp-page-handler="Register" autocomplete="off" novalidate>
+        <form method="post" asp-page-handler="Register" asp-route-returnUrl="@Model.ReturnUrl" autocomplete="off" novalidate>
             @if (Model.ServerErrors.Count > 0)
             {
                 <div class="auth-server-errors">
@@ -76,26 +82,28 @@ else
                 </div>
             }
             <div class="auth-field">
-                <label>Mật khẩu <span class="required-star">*</span></label>
+                <label data-i18n="register.pwd.password">Mật khẩu <span class="required-star">*</span></label>
                 <div class="auth-input-password-wrapper">
                     <input asp-for="Pwd.Password" type="password" id="pwd1"
-                           class="auth-input" placeholder="Nhập mật khẩu" />
+                           class="auth-input" placeholder="Nhập mật khẩu"
+                           data-i18n-placeholder="register.pwd.password.placeholder" />
                     <button type="button" class="toggle-password"
                             onclick="togglePwd('pwd1', this)" tabindex="-1">
                         @Html.Raw(RegisterModel.EyeClosedSvg)
                     </button>
                 </div>
                 <span asp-validation-for="Pwd.Password" class="auth-validation"></span>
-                <div class="auth-hint-msg">
+                <div class="auth-hint-msg" data-i18n="register.pwd.hint">
                     Sử dụng tối thiểu 8 ký tự, bao gồm chữ cái, chữ số và ký tự đặc biệt
                 </div>
             </div>
 
             <div class="auth-field">
-                <label>Nhập lại mật khẩu <span class="required-star">*</span></label>
+                <label data-i18n="register.pwd.confirm">Nhập lại mật khẩu <span class="required-star">*</span></label>
                 <div class="auth-input-password-wrapper">
                     <input asp-for="Pwd.ConfirmPassword" type="password" id="pwd2"
-                           class="auth-input" placeholder="Nhập lại mật khẩu" />
+                           class="auth-input" placeholder="Nhập lại mật khẩu"
+                           data-i18n-placeholder="register.pwd.confirm.placeholder" />
                     <button type="button" class="toggle-password"
                             onclick="togglePwd('pwd2', this)" tabindex="-1">
                         @Html.Raw(RegisterModel.EyeClosedSvg)
@@ -105,8 +113,8 @@ else
             </div>
 
             <div class="auth-btn-row">
-                <a href="/account/register" class="btn-auth-outline">Quay lại</a>
-                <button type="submit" class="btn-auth-primary">Đăng ký</button>
+                <a href="/account/register" class="btn-auth-outline" data-i18n="register.pwd.back">Quay lại</a>
+                <button type="submit" class="btn-auth-primary" data-i18n="register.pwd.submit">Đăng ký</button>
             </div>
         </form>
     </div>
@@ -119,11 +127,14 @@ else
             <div class="auth-modal-header">
                 <div class="auth-modal-title">
                     <span class="success-icon">✓</span>
-                    Tạo tài khoản thành công
+                    <span data-i18n="register.success.title">Tạo tài khoản thành công</span>
                 </div>
             </div>
+            <div class="auth-modal-body" style="padding: 0 24px 16px; color: var(--auth-text-muted); font-size: 0.95em;">
+                <span data-i18n="register.success.body">Vui lòng kiểm tra email để xác nhận tài khoản trước khi đăng nhập.</span>
+            </div>
             <div class="auth-modal-footer">
-                <a href="/account/login" class="btn-modal-ok">OK</a>
+                <a href="/account/login@(!string.IsNullOrEmpty(Model.ReturnUrl) ? "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl) : "")" class="btn-modal-ok" data-i18n="register.success.ok">OK</a>
             </div>
         </div>
     </div>

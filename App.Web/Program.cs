@@ -23,6 +23,9 @@ builder.Services.AddAuthentication(options =>
     options.ResponseType = "code";
     options.SaveTokens = true;
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters.NameClaimType = "name";
+    options.TokenValidationParameters.RoleClaimType = "role";
 
     // In Docker the browser-facing authority differs from the internal backchannel URL.
     // Set MetadataAddress to the internal service URL when running in a container.
@@ -36,12 +39,33 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("roles");
 
     options.CallbackPath = "/signin-oidc";
+
+    options.Events.OnAuthorizationCodeReceived = context =>
+    {
+        var tenant = context.HttpContext.Request.Query["tenant"].ToString();
+        if (string.IsNullOrWhiteSpace(tenant)
+            && context.HttpContext.Request.Cookies.TryGetValue("Vaultex.Tenant", out var cookieTenant))
+        {
+            tenant = cookieTenant;
+        }
+
+        if (!string.IsNullOrWhiteSpace(tenant))
+        {
+            context.TokenEndpointRequest?.SetParameter("tenant", tenant);
+            context.HttpContext.Response.Cookies.Delete("Vaultex.Tenant");
+        }
+
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<App.Web.Services.ApiClient>();
+builder.Services.AddScoped<App.Web.Services.ThemeService>();
+builder.Services.AddScoped<App.Web.Services.I18nService>();
+builder.Services.AddHealthChecks();
 
 builder.Services.AddHttpClient("api", client =>
     client.BaseAddress = new Uri(
@@ -61,9 +85,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
-app.MapGet("api/auth/login", () =>
+app.MapGet("api/auth/login", (string? returnUrl) =>
     Results.Challenge(
-        properties: new AuthenticationProperties { RedirectUri = "/" },
+        properties: new AuthenticationProperties
+        {
+            RedirectUri = !string.IsNullOrEmpty(returnUrl) ? returnUrl : "/"
+        },
         authenticationSchemes: [OpenIdConnectDefaults.AuthenticationScheme]
     ));
 
@@ -78,5 +105,7 @@ app.MapGet("api/auth/logout", () =>
 
 app.MapRazorComponents<App.Web.Components.App>()
     .AddInteractiveServerRenderMode();
+
+app.MapHealthChecks("/health");
 
 app.Run();

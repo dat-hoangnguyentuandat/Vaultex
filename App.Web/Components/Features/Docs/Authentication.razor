@@ -1,0 +1,78 @@
+@page "/docs/authentication"
+@layout DocsLayout
+@attribute [AllowAnonymous]
+
+<PageTitle>Authentication basics — Vaultex</PageTitle>
+
+<div class="docs-eyebrow">Get started</div>
+<h1>Authentication basics</h1>
+<p class="docs-lead">
+    A quick mental model for what happens when a user signs in through Vaultex. If you're new to
+    OAuth or OpenID Connect, start here before reading the deeper concept guides.
+</p>
+
+<h2 id="players">The three players</h2>
+<p>Every Vaultex sign-in involves three parties:</p>
+<ul>
+    <li><strong>The user</strong> &mdash; sitting in front of a browser.</li>
+    <li><strong>Your application</strong> &mdash; the thing the user wants to use.</li>
+    <li><strong>Vaultex</strong> &mdash; the identity provider that holds the user's credentials.</li>
+</ul>
+<p>
+    Your application <em>never sees the user's password</em>. That's the whole point of using an
+    identity provider. Vaultex handles authentication and hands your app a signed token that proves
+    who the user is.
+</p>
+
+<h2 id="flow">What happens when a user signs in</h2>
+<ol>
+    <li>The user clicks "Sign in" in your app.</li>
+    <li>Your app redirects the browser to Vaultex with a request that says <em>"I'm client X, send the user back to URL Y after they sign in."</em></li>
+    <li>Vaultex shows the user a sign-in form. They enter their credentials.</li>
+    <li>Vaultex redirects the browser back to your app with a one-time <strong>authorization code</strong>.</li>
+    <li>Your app's backend exchanges the code for an <strong>access token</strong> and an <strong>ID token</strong>.</li>
+    <li>Your app reads the ID token to learn who the user is, and stores a session cookie.</li>
+</ol>
+
+<div class="docs-callout docs-callout--info">
+    <span class="docs-callout-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+    </span>
+    <div class="docs-callout-body">
+        <div class="docs-callout-title">This is the Authorization Code flow</div>
+        <p>It's the standard OAuth 2.0 flow for web and native apps. Vaultex requires PKCE on top of it for extra protection &mdash; see <a href="/docs/concepts/oauth-flow">OAuth 2.0 + PKCE</a>.</p>
+    </div>
+</div>
+
+<h2 id="tokens">What you get back</h2>
+<table>
+    <thead><tr><th>Token</th><th>Used for</th><th>Lifetime</th></tr></thead>
+    <tbody>
+        <tr><td><strong>ID token</strong></td><td>Telling your app who the user is. JWT with claims like <code>sub</code>, <code>name</code>, <code>email</code>.</td><td>~1 hour</td></tr>
+        <tr><td><strong>Access token</strong></td><td>Calling protected APIs on behalf of the user.</td><td>~1 hour</td></tr>
+        <tr><td><strong>Refresh token</strong></td><td>Getting a new access token without sending the user back through sign-in.</td><td>~14 days</td></tr>
+    </tbody>
+</table>
+
+<h2 id="next">Where to next?</h2>
+<div class="docs-card-grid">
+    <a href="/docs/concepts/oauth-flow" class="docs-card">
+        <div class="docs-card-title">OAuth 2.0 + PKCE</div>
+        <div class="docs-card-desc">The full flow with diagrams and request/response shapes.</div>
+    </a>
+    <a href="/docs/concepts/tokens" class="docs-card">
+        <div class="docs-card-title">Tokens deep-dive</div>
+        <div class="docs-card-desc">JWT structure, signing, validation, and rotation.</div>
+    </a>
+</div>
+
+<div class="docs-pager">
+    <a href="/docs/installation" class="docs-pager-link docs-pager-link--prev">
+        <div class="docs-pager-label">Previous</div>
+        <div class="docs-pager-title">← Installation</div>
+    </a>
+    <a href="/docs/concepts/oauth-flow" class="docs-pager-link docs-pager-link--next">
+        <div class="docs-pager-label">Next</div>
+        <div class="docs-pager-title">OAuth 2.0 + PKCE →</div>
+    </a>
+</div>
