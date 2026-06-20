@@ -36,12 +36,29 @@ try
               .ReadFrom.Services(services)
               .Enrich.FromLogContext());
 
-    // Database
-    builder.Services.AddDbContext<AppDbContext>(options =>
+    builder.Services.Configure<TenantConnectionOptions>(
+        builder.Configuration.GetSection("Tenancy"));
+    builder.Services.AddSingleton<TenantConnectionStringFactory>();
+
+    // Platform database: tenant catalog and provisioning metadata.
+    builder.Services.AddDbContext<PlatformDbContext>((sp, options) =>
     {
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+        var connectionFactory = sp.GetRequiredService<TenantConnectionStringFactory>();
+        options.UseNpgsql(connectionFactory.GetPlatformConnectionString());
+    });
+
+    // Tenant database: Identity, OpenIddict, policies, audit logs and tenant-owned data.
+    builder.Services.AddDbContext<AppDbContext>((sp, options) =>
+    {
+        var tenantContext = sp.GetRequiredService<ITenantContext>();
+        var connectionFactory = sp.GetRequiredService<TenantConnectionStringFactory>();
+        var connectionString = tenantContext.ConnectionString
+            ?? connectionFactory.GetDefaultTenantConnectionString();
+
+        options.UseNpgsql(connectionString);
         options.UseOpenIddict();
     });
+    builder.Services.AddScoped<TenantDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
     // Tenant context — scoped per request
     builder.Services.AddScoped<ITenantContext, TenantContext>();
@@ -292,6 +309,8 @@ try
 
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<AuditLogService>();
+    builder.Services.AddScoped<TenantProvisioningService>();
+    builder.Services.AddScoped<PlatformUserDirectoryService>();
     builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
     builder.Services.AddScoped<PolicyEngine>();
     builder.Services.AddScoped<IAuthorizationHandler, PolicyAuthorizationHandler>();
@@ -374,6 +393,7 @@ try
     });
 
     app.UseSession();
+    app.UseMiddleware<TenantDiscoveryMiddleware>();
     app.UseMiddleware<TenantResolverMiddleware>();
     app.UseAuthentication();
     app.UseMiddleware<App.Infrastructure.Middleware.TokenBlacklistMiddleware>();
@@ -386,6 +406,10 @@ try
     // Seed
     using (var scope = app.Services.CreateScope())
     {
+        var platformDb = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
+        await platformDb.Database.MigrateAsync();
+        var tenantDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await tenantDb.Database.MigrateAsync();
         await TenantSeeder.SeedAsync(scope.ServiceProvider);
         await OpenIddictSeeder.SeedAsync(scope.ServiceProvider);
     }

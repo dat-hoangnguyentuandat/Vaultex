@@ -7,11 +7,11 @@ namespace App.Infrastructure.Services
 {
     public class AuditLogService
     {
-        private readonly AppDbContext _db;
+        private readonly TenantDbContext _db;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<AuditLogService> _logger;
 
-        public AuditLogService(AppDbContext db, IHttpContextAccessor httpContextAccessor, ILogger<AuditLogService> logger)
+        public AuditLogService(TenantDbContext db, IHttpContextAccessor httpContextAccessor, ILogger<AuditLogService> logger)
         {
             _db = db;
             _httpContextAccessor = httpContextAccessor;

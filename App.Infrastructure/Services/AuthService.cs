@@ -15,19 +15,22 @@ namespace App.Infrastructure.Services
         private readonly IEmailSender _emailSender;
         private readonly IConfiguration _config;
         private readonly AuditLogService _auditLog;
+        private readonly PlatformUserDirectoryService _directory;
 
         public AuthService(
             UserManager<User> userManager,
             RoleManager<AppRole> roleManager,
             IEmailSender emailSender,
             IConfiguration config,
-            AuditLogService auditLog)
+            AuditLogService auditLog,
+            PlatformUserDirectoryService directory)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _emailSender = emailSender;
             _config = config;
             _auditLog = auditLog;
+            _directory = directory;
         }
 
         public async Task ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
@@ -87,6 +90,9 @@ namespace App.Infrastructure.Services
 
             await _auditLog.LogAsync(AuditEventTypes.Register, tenantId, user.Id,
                 resourceType: "User", resourceId: user.Id.ToString());
+
+            if (tenantId.HasValue)
+                await _directory.UpsertAsync(tenantId.Value, user.Email!, user.Id, user.IsActive);
 
             await SendEmailConfirmationAsync(user);
 

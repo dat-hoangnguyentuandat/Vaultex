@@ -11,10 +11,12 @@ namespace App.Infrastructure.Data
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
-            var db = serviceProvider.GetRequiredService<AppDbContext>();
+            var platformDb = serviceProvider.GetRequiredService<PlatformDbContext>();
             var userManager = serviceProvider.GetRequiredService<UserManager<User>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
             var logger = serviceProvider.GetRequiredService<ILogger<AppDbContext>>();
+            var provisioning = serviceProvider.GetRequiredService<App.Infrastructure.Services.TenantProvisioningService>();
+            var connectionFactory = serviceProvider.GetRequiredService<App.Infrastructure.Tenancy.TenantConnectionStringFactory>();
 
             // Seed platform-level role (no tenant)
             var platformRoleName = Roles.PlatformAdmin;
@@ -57,7 +59,7 @@ namespace App.Infrastructure.Data
 
             // Seed dev tenant
             var subdomain = "acme";
-            var tenant = await db.Tenants.FirstOrDefaultAsync(t => t.Subdomain == subdomain);
+            var tenant = await platformDb.Tenants.FirstOrDefaultAsync(t => t.Subdomain == subdomain);
 
             if (tenant is null)
             {
@@ -67,41 +69,27 @@ namespace App.Infrastructure.Data
                     Subdomain = subdomain,
                     Region = "Southeast Asia",
                     Status = TenantStatus.Active,
+                    DatabaseName = connectionFactory.NormalizeDatabaseName($"vaultex_{subdomain}"),
+                    ConnectionString = connectionFactory.BuildForNewTenant(subdomain),
                     Configuration = new TenantConfiguration()
                 };
-                db.Tenants.Add(tenant);
-                await db.SaveChangesAsync();
+                platformDb.Tenants.Add(tenant);
+                await platformDb.SaveChangesAsync();
                 logger.LogInformation("Seeded tenant: {Subdomain} ({TenantId})", subdomain, tenant.Id);
             }
 
-            // Seed roles for this tenant
-            await RoleSeeder.SeedRolesAsync(serviceProvider, tenant.Id);
+            await provisioning.ProvisionTenantDatabaseAsync(tenant);
 
             // Seed tenant admin user
             var adminEmail = "admin@acme.com";
-            if (await userManager.FindByEmailAsync(adminEmail) is null)
+            try
             {
-                var admin = new User
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    FullName = "Acme Super Admin",
-                    TenantId = tenant.Id,
-                    IsActive = true,
-                    EmailConfirmed = true
-                };
-
-                var result = await userManager.CreateAsync(admin, "Admin@123456");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(admin, $"{tenant.Id}:{Roles.Admin}");
-                    logger.LogInformation("Seeded tenant admin: {Email}", adminEmail);
-                }
-                else
-                {
-                    logger.LogError("Failed to seed admin user: {Errors}",
-                        string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
+                await provisioning.CreateTenantAdminAsync(tenant.Id, adminEmail, "Admin@123456", "Acme Super Admin");
+                logger.LogInformation("Seeded tenant admin: {Email}", adminEmail);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Email already", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogInformation("Tenant admin already exists: {Email}", adminEmail);
             }
         }
     }

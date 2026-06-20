@@ -16,21 +16,18 @@ namespace App.API.Controllers
                Policy = "PlatformAdmin")]
     public class TenantController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly PlatformDbContext _db;
         private readonly AuditLogService _auditLog;
-        private readonly RoleManager<AppRole> _roleManager;
-        private readonly UserManager<User> _userManager;
+        private readonly TenantProvisioningService _provisioning;
 
         public TenantController(
-            AppDbContext db,
+            PlatformDbContext db,
             AuditLogService auditLog,
-            RoleManager<AppRole> roleManager,
-            UserManager<User> userManager)
+            TenantProvisioningService provisioning)
         {
             _db = db;
             _auditLog = auditLog;
-            _roleManager = roleManager;
-            _userManager = userManager;
+            _provisioning = provisioning;
         }
 
         [HttpGet]
@@ -39,7 +36,7 @@ namespace App.API.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
-            var query = _db.Tenants.AsNoTracking().IgnoreQueryFilters();
+            var query = _db.Tenants.AsNoTracking();
 
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(t => t.Name.Contains(search) || t.Subdomain.Contains(search));
@@ -53,11 +50,13 @@ namespace App.API.Controllers
                 .ToListAsync();
 
             var tenantIds = tenants.Select(t => t.Id).ToList();
-            var userCounts = await _db.Users.IgnoreQueryFilters()
-                .Where(u => u.TenantId.HasValue && tenantIds.Contains(u.TenantId!.Value))
-                .GroupBy(u => u.TenantId!.Value)
-                .Select(g => new { TenantId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.TenantId, x => x.Count);
+            var userCounts = new Dictionary<Guid, int>();
+            foreach (var tenant in await _db.Tenants.AsNoTracking()
+                         .Where(t => tenantIds.Contains(t.Id))
+                         .ToListAsync())
+            {
+                userCounts[tenant.Id] = await _provisioning.CountTenantUsersAsync(tenant);
+            }
 
             var items = tenants.Select(t => new
             {
@@ -71,13 +70,12 @@ namespace App.API.Controllers
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetTenant(Guid id)
         {
-            var tenant = await _db.Tenants.AsNoTracking().IgnoreQueryFilters()
+            var tenant = await _db.Tenants.AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant is null) return NotFound();
 
-            var userCount = await _db.Users.AsNoTracking().IgnoreQueryFilters()
-                .CountAsync(u => u.TenantId == id);
+            var userCount = await _provisioning.CountTenantUsersAsync(tenant);
 
             return Ok(new
             {
@@ -92,35 +90,10 @@ namespace App.API.Controllers
         {
             var subdomain = req.Subdomain.ToLowerInvariant();
 
-            if (await _db.Tenants.IgnoreQueryFilters().AnyAsync(t => t.Subdomain == subdomain))
+            if (await _db.Tenants.AnyAsync(t => t.Subdomain == subdomain))
                 return Conflict(new { error = "Subdomain already in use." });
 
-            var tenant = new Tenant
-            {
-                Name = req.Name,
-                Subdomain = subdomain,
-                Region = req.Region ?? "",
-                Status = TenantStatus.Active,
-                Configuration = new TenantConfiguration()
-            };
-
-            _db.Tenants.Add(tenant);
-            await _db.SaveChangesAsync();
-
-            // Seed standard roles for the new tenant
-            foreach (var roleName in Roles.All)
-            {
-                var fullName = $"{tenant.Id}:{roleName}";
-                if (await _roleManager.FindByNameAsync(fullName) is null)
-                {
-                    await _roleManager.CreateAsync(new AppRole
-                    {
-                        Name = fullName,
-                        NormalizedName = fullName.ToUpperInvariant(),
-                        TenantId = tenant.Id
-                    });
-                }
-            }
+            var tenant = await _provisioning.CreateTenantAsync(req.Name, subdomain, req.Region);
 
             await _auditLog.LogAsync(AuditEventTypes.TenantCreated,
                 resourceType: "Tenant", resourceId: tenant.Id.ToString(), newValue: tenant.Name);
@@ -131,7 +104,7 @@ namespace App.API.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateTenant(Guid id, [FromBody] TenantUpdateRequest req)
         {
-            var tenant = await _db.Tenants.IgnoreQueryFilters()
+            var tenant = await _db.Tenants
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant is null) return NotFound();
@@ -152,7 +125,7 @@ namespace App.API.Controllers
         [HttpPut("{id:guid}/status")]
         public async Task<IActionResult> SetStatus(Guid id, [FromQuery] TenantStatus status)
         {
-            var tenant = await _db.Tenants.IgnoreQueryFilters()
+            var tenant = await _db.Tenants
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant is null) return NotFound();
@@ -171,29 +144,24 @@ namespace App.API.Controllers
         [HttpPost("{id:guid}/admin")]
         public async Task<IActionResult> CreateTenantAdmin(Guid id, [FromBody] TenantAdminRequest req)
         {
-            var tenant = await _db.Tenants.IgnoreQueryFilters()
+            var tenant = await _db.Tenants
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (tenant is null) return NotFound();
 
-            if (await _userManager.FindByEmailAsync(req.Email) is not null)
-                return Conflict(new { error = "Email already in use." });
-
-            var user = new User
+            User user;
+            try
             {
-                UserName = req.Email,
-                Email = req.Email,
-                FullName = req.FullName,
-                TenantId = tenant.Id,
-                IsActive = true,
-                EmailConfirmed = true
-            };
-
-            var result = await _userManager.CreateAsync(user, req.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors.Select(e => e.Description));
-
-            await _userManager.AddToRoleAsync(user, $"{tenant.Id}:{Roles.Admin}");
+                user = await _provisioning.CreateTenantAdminAsync(tenant.Id, req.Email, req.Password, req.FullName);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Email already", StringComparison.OrdinalIgnoreCase))
+            {
+                return Conflict(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
 
             await _auditLog.LogAsync(AuditEventTypes.UserCreated,
                 tenantId: tenant.Id, userId: user.Id,
@@ -205,13 +173,13 @@ namespace App.API.Controllers
         [HttpGet("~/api/platform/stats")]
         public async Task<IActionResult> GetStats()
         {
-            var tenantCount = await _db.Tenants.IgnoreQueryFilters().CountAsync();
-            var activeTenants = await _db.Tenants.IgnoreQueryFilters()
+            var tenantCount = await _db.Tenants.CountAsync();
+            var activeTenants = await _db.Tenants
                 .CountAsync(t => t.Status == TenantStatus.Active);
-            var userCount = await _db.Users.IgnoreQueryFilters().CountAsync();
-            var today = DateTime.UtcNow.Date;
-            var auditToday = await _db.AuditLogs
-                .CountAsync(a => a.Timestamp >= today);
+            var userCount = 0;
+            foreach (var tenant in await _db.Tenants.AsNoTracking().ToListAsync())
+                userCount += await _provisioning.CountTenantUsersAsync(tenant);
+            var auditToday = 0;
 
             return Ok(new { tenantCount, activeTenants, userCount, auditToday });
         }

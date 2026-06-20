@@ -21,13 +21,13 @@ namespace App.Infrastructure.Authorization
 
     public class PolicyAuthorizationHandler : AuthorizationHandler<PolicyRequirement>
     {
-        private readonly AppDbContext _db;
+        private readonly TenantDbContext _db;
         private readonly ITenantContext _tenantContext;
         private readonly PolicyEngine _engine;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public PolicyAuthorizationHandler(
-            AppDbContext db,
+            TenantDbContext db,
             ITenantContext tenantContext,
             PolicyEngine engine,
             IHttpContextAccessor httpContextAccessor)

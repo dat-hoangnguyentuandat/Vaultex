@@ -20,12 +20,22 @@
         </div>
     }
 
-    <form method="post" asp-route-returnUrl="@Model.ReturnUrl" autocomplete="off">
+    <form method="post" id="login-form" asp-route-returnUrl="@Model.ReturnUrl" asp-route-tenant="@Model.Tenant" autocomplete="off">
         <div asp-validation-summary="None" class="auth-alert-error" style="display:@(ViewData.ModelState.IsValid ? "none" : "flex")">
             <span class="auth-alert-icon">⚠</span>
             <span class="auth-alert-text">
                 @Html.ValidationSummary(excludePropertyErrors: true, message: "", htmlAttributes: new { @class = "" })
             </span>
+        </div>
+
+        <div class="auth-field">
+            <label for="account-type">Loại tài khoản</label>
+            <div class="auth-select-wrapper">
+                <select id="account-type" name="accountType" class="auth-input auth-select">
+                    <option value="platform" selected="@(string.IsNullOrEmpty(Model.Tenant) ? "selected" : null)">Platform</option>
+                    <option value="tenant" selected="@(!string.IsNullOrEmpty(Model.Tenant) ? "selected" : null)">Tenant account</option>
+                </select>
+            </div>
         </div>
 
         <div class="auth-field">
@@ -107,9 +117,24 @@
                 <line x1="1" y1="1" x2="23" y2="23"/>`;
         }
     }
-    document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('login-form').addEventListener('submit', function() {
+        this.action = window.location.pathname + window.location.search;
         const btn = document.getElementById('submit-btn');
         btn.disabled = true;
         btn.innerHTML = '<span class="btn-spinner"></span><span data-i18n="login.signing_in">Đang đăng nhập...</span>';
     });
+
+    const accountType = document.getElementById('account-type');
+
+    function updateLoginUrl(type) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('tenant');
+        window.history.replaceState({}, '', url);
+    }
+
+    function setAccountType(type) {
+        updateLoginUrl(type);
+    }
+
+    accountType.addEventListener('change', () => setAccountType(accountType.value));
 </script>

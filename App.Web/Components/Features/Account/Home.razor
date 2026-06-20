@@ -1,5 +1,6 @@
 @page "/welcome"
 @layout CleanLayout
+@attribute [Authorize]
 @using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>Vaultex</PageTitle>
@@ -82,7 +83,7 @@
                 </div>
 
                 <div class="google-landing-actions">
-                    <a href="api/auth/login" class="google-signin-btn">
+                    <a href="api/auth/login?returnUrl=%2Fwelcome" class="google-signin-btn">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                             <polyline points="10 17 15 12 10 7"/>

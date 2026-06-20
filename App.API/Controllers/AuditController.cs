@@ -14,10 +14,10 @@ namespace App.API.Controllers
                Policy = "UserManage")]
     public class AuditController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly TenantDbContext _db;
         private readonly ITenantContext _tenantContext;
 
-        public AuditController(AppDbContext db, ITenantContext tenantContext)
+        public AuditController(TenantDbContext db, ITenantContext tenantContext)
         {
             _db = db;
             _tenantContext = tenantContext;

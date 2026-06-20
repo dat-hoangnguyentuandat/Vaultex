@@ -1,10 +1,12 @@
 using App.Application.DTOs;
 using App.Domain.Entities;
+using App.Infrastructure.Data;
 using App.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 
 namespace App.API.Pages.Account;
 
@@ -13,27 +15,32 @@ public class LoginModel : PageModel
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly AuditLogService _auditLog;
+    private readonly PlatformDbContext _platformDb;
 
     public LoginModel(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
-        AuditLogService auditLog)
+        AuditLogService auditLog,
+        PlatformDbContext platformDb)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _auditLog = auditLog;
+        _platformDb = platformDb;
     }
 
     [BindProperty]
     public LoginDto Input { get; set; } = new();
 
     public string? ReturnUrl { get; set; }
+    public string? Tenant { get; set; }
     public string? ErrorMessage { get; set; }
     public bool EmailNotConfirmed { get; private set; }
 
-    public void OnGet(string? returnUrl = null, string? error = null)
+    public void OnGet(string? returnUrl = null, string? error = null, string? tenant = null)
     {
         ReturnUrl = returnUrl;
+        Tenant = NormalizeTenant(tenant);
 
         ErrorMessage = error switch
         {
@@ -44,9 +51,10 @@ public class LoginModel : PageModel
     }
 
     [EnableRateLimiting("LoginSubmit")]
-    public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+    public async Task<IActionResult> OnPostAsync(string? returnUrl = null, string? tenant = null)
     {
         ReturnUrl = returnUrl;
+        Tenant = NormalizeTenant(tenant);
 
         if (!ModelState.IsValid)
             return Page();
@@ -86,6 +94,9 @@ public class LoginModel : PageModel
                 ? returnUrl
                 : "/";
 
+            if (user.TenantId.HasValue)
+                destination = await AddTenantToDestinationAsync(destination, user.TenantId.Value);
+
             return Redirect(destination);
         }
 
@@ -109,5 +120,41 @@ public class LoginModel : PageModel
         ModelState.AddModelError(string.Empty,
             "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.");
         return Page();
+    }
+
+    private static string? NormalizeTenant(string? tenant)
+        => string.IsNullOrWhiteSpace(tenant) ? null : tenant.Trim().ToLowerInvariant();
+
+    private async Task<string> AddTenantToDestinationAsync(string destination, Guid tenantId)
+    {
+        var subdomain = await _platformDb.Tenants
+            .AsNoTracking()
+            .Where(t => t.Id == tenantId)
+            .Select(t => t.Subdomain)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrWhiteSpace(subdomain))
+            return destination;
+
+        Response.Cookies.Append("Vaultex.Tenant", subdomain, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+            MaxAge = TimeSpan.FromMinutes(10)
+        });
+
+        var uri = new Uri(destination, UriKind.RelativeOrAbsolute);
+        var path = uri.IsAbsoluteUri ? uri.AbsolutePath : destination.Split('?', 2)[0];
+        var queryText = uri.IsAbsoluteUri
+            ? uri.Query.TrimStart('?')
+            : destination.Contains('?') ? destination.Split('?', 2)[1] : "";
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryText)
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+        query["tenant"] = subdomain;
+
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(path, query!);
     }
 }

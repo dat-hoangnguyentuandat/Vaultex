@@ -300,6 +300,31 @@
     box-shadow: none;
 }
 
+/* ----- Account type select ----- */
+.auth-select-wrapper {
+    position: relative;
+}
+
+.auth-select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--auth-text-muted);
+    border-bottom: 2px solid var(--auth-text-muted);
+    transform: translateY(-65%) rotate(45deg);
+    pointer-events: none;
+}
+
+.auth-select {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 40px;
+    font-weight: 600;
+}
+
 /* password wrapper */
 .auth-input-password-wrapper {
     position: relative;

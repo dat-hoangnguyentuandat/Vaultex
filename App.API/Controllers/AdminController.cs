@@ -17,24 +17,27 @@ namespace App.API.Controllers
                Policy = "UserManage")]
     public class AdminController : ControllerBase
     {
-        private readonly AppDbContext _db;
+        private readonly TenantDbContext _db;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly ITenantContext _tenantContext;
         private readonly AuditLogService _auditLog;
+        private readonly PlatformUserDirectoryService _directory;
 
         public AdminController(
-            AppDbContext db,
+            TenantDbContext db,
             UserManager<User> userManager,
             RoleManager<AppRole> roleManager,
             ITenantContext tenantContext,
-            AuditLogService auditLog)
+            AuditLogService auditLog,
+            PlatformUserDirectoryService directory)
         {
             _db = db;
             _userManager = userManager;
             _roleManager = roleManager;
             _tenantContext = tenantContext;
             _auditLog = auditLog;
+            _directory = directory;
         }
 
         // ── Tenant ────────────────────────────────────────────────────────
@@ -128,6 +131,8 @@ namespace App.API.Controllers
 
             await _auditLog.LogAsync(AuditEventTypes.UserCreated, _tenantContext.TenantId, user.Id,
                 resourceType: "User", resourceId: user.Id.ToString());
+
+            await _directory.UpsertAsync(_tenantContext.TenantId.Value, user.Email!, user.Id, user.IsActive);
 
             return Ok(new { user.Id, user.Email });
         }

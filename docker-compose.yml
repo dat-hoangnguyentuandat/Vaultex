@@ -13,6 +13,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "5433:5432"
 
   redis:
     image: redis:7-alpine
@@ -32,6 +34,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=vaultex;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      ConnectionStrings__PlatformConnection: "Host=postgres;Port=5432;Database=vaultex_platform;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      ConnectionStrings__DefaultTenantConnection: "Host=postgres;Port=5432;Database=vaultex_identity;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
+      Tenancy__ConnectionTemplate: "Host=postgres;Port=5432;Database=vaultex_template;Username=vaultex;Password=${POSTGRES_PASSWORD:-vaultex_dev}"
       ConnectionStrings__Redis: "redis:6379"
       OpenIddict__TokenLifetimes__AccessTokenSeconds: "3600"
       OpenIddict__TokenLifetimes__RefreshTokenDays: "30"

@@ -39,6 +39,24 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("roles");
 
     options.CallbackPath = "/signin-oidc";
+
+    options.Events.OnAuthorizationCodeReceived = context =>
+    {
+        var tenant = context.HttpContext.Request.Query["tenant"].ToString();
+        if (string.IsNullOrWhiteSpace(tenant)
+            && context.HttpContext.Request.Cookies.TryGetValue("Vaultex.Tenant", out var cookieTenant))
+        {
+            tenant = cookieTenant;
+        }
+
+        if (!string.IsNullOrWhiteSpace(tenant))
+        {
+            context.TokenEndpointRequest?.SetParameter("tenant", tenant);
+            context.HttpContext.Response.Cookies.Delete("Vaultex.Tenant");
+        }
+
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddCascadingAuthenticationState();
